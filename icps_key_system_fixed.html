@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="ICPS physical key issuance and tracking system with digital signatures">
 <title>ICPS Key Issuance System</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -35,6 +36,19 @@
   --danger-bg: #FEF2F2;
   --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ── Screen Reader Only ───────────────────────────────────── */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 /* ── Reset & Base ────────────────────────────────────────────── */
@@ -146,6 +160,9 @@ body {
   border-color: var(--accent); background-color: var(--bg-card);
   box-shadow: 0 0 0 3px var(--accent-light);
 }
+.field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible {
+  outline: none;
+}
 
 /* ── Signature Pad ───────────────────────────────────────────── */
 .sig-wrap {
@@ -194,11 +211,19 @@ body {
 }
 .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(30,58,95,0.25); }
 .btn-primary:active { transform: translateY(0); }
+.btn-primary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 .btn-ghost {
   background: transparent; color: var(--text-secondary);
   border: 1px solid var(--border);
 }
 .btn-ghost:hover { background: var(--bg-hover); border-color: var(--text-tertiary); }
+.btn-ghost:focus-visible {
+  outline: 2px solid var(--text-secondary);
+  outline-offset: 2px;
+}
 .btn-sm { padding: 6px 12px; font-size: 0.75rem; }
 
 /* ── Toolbar ─────────────────────────────────────────────────── */
@@ -353,7 +378,7 @@ tr:last-child td { border-bottom: none; }
 .modal {
   background: var(--bg-card); border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg); max-width: 520px; width: 100%;
-  transform: scale(0.95); transition: transform 0.2s;
+  transform: scale(0.95); transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   margin: auto;
 }
 .modal-overlay.show .modal { transform: scale(1); }
@@ -414,7 +439,7 @@ tr:last-child td { border-bottom: none; }
 <body>
 
 <div id="app">
-  <h2 class="sr-only" style="position:absolute;left:-9999px;">ICPS Key Issuance System — manage physical key assignments</h2>
+  <h2 class="sr-only">ICPS Key Issuance System — manage physical key assignments</h2>
 
   <!-- Header -->
   <header class="header">
@@ -427,7 +452,7 @@ tr:last-child td { border-bottom: none; }
         <div class="header-sub">ICPS — physical access management</div>
       </div>
     </div>
-    <div class="date-stamp" id="dateStamp"></div>
+    <div class="date-stamp" id="dateStamp" aria-label="Current date"></div>
   </header>
 
   <!-- Stats -->
@@ -459,11 +484,11 @@ tr:last-child td { border-bottom: none; }
   </div>
 
   <!-- Email Settings -->
-  <button class="settings-toggle" id="settingsToggle">
+  <button class="settings-toggle" id="settingsToggle" aria-expanded="false" aria-controls="settingsPanel">
     <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor"/></svg>
     Email & Export Settings
   </button>
-  <div class="settings-panel" id="settingsPanel">
+  <div class="settings-panel" id="settingsPanel" role="region" aria-label="Email and export settings">
     <div class="form-grid-2">
       <div class="field">
         <label>SMTP Host</label>
@@ -582,8 +607,8 @@ tr:last-child td { border-bottom: none; }
         </colgroup>
         <thead>
           <tr>
-            <th>Key ID</th><th>Department</th><th>Issued by</th><th>Recipient</th><th>Purpose</th>
-            <th>Date issued</th><th>Date returned</th><th>Returned by</th><th>Returned to</th><th>Status</th><th>Actions</th>
+            <th scope="col">Key ID</th><th scope="col">Department</th><th scope="col">Issued by</th><th scope="col">Recipient</th><th scope="col">Purpose</th>
+            <th scope="col">Date issued</th><th scope="col">Date returned</th><th scope="col">Returned by</th><th scope="col">Returned to</th><th scope="col">Status</th><th scope="col">Actions</th>
           </tr>
         </thead>
         <tbody id="tBody"></tbody>
@@ -667,7 +692,7 @@ tr:last-child td { border-bottom: none; }
 
 <script>
 /* ── API Base URL ────────────────────────────────────────────── */
-const API_BASE = window.location.origin; // Same origin as the page
+const API_BASE = ''; // Relative to current origin (works with subpaths)
 
 /* ── State ───────────────────────────────────────────────────── */
 let records = [];
@@ -686,9 +711,11 @@ function initSigPad(canvasId, clearBtnId) {
 
   function resize() {
     const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
     const dpr = window.devicePixelRatio || 1;
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -697,7 +724,7 @@ function initSigPad(canvasId, clearBtnId) {
   }
 
   resize();
-  window.addEventListener('resize', () => { resize(); });
+  window.addEventListener('resize', resize);
 
   function getPos(e) {
     const rect = canvas.getBoundingClientRect();
@@ -730,6 +757,8 @@ function initSigPad(canvasId, clearBtnId) {
   canvas.addEventListener('touchstart', start, { passive: false });
   canvas.addEventListener('touchmove', move, { passive: false });
   canvas.addEventListener('touchend', end);
+
+
 
   document.getElementById(clearBtnId).addEventListener('click', () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -793,6 +822,7 @@ const ICONS = {
 function fmt(ts) {
   if (!ts) return '—';
   const d = new Date(ts);
+  if (isNaN(d.getTime())) return '—';
   const date = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
   return `${date} · ${time}`;
@@ -807,6 +837,7 @@ function escapeHtml(str) {
 /* ── Toast ───────────────────────────────────────────────────── */
 function toast(msg, type = 'success') {
   const container = document.getElementById('toastContainer');
+  if (!container) return;
   const el = document.createElement('div');
   el.className = `toast ${type}`;
   el.innerHTML = `${type === 'success' ? ICONS.check : ICONS.alert}<span>${escapeHtml(msg)}</span>`;
@@ -820,29 +851,44 @@ function toast(msg, type = 'success') {
 
 /* ── API Helpers ─────────────────────────────────────────────── */
 async function apiGet(endpoint) {
-  const res = await fetch(`${API_BASE}${endpoint}`);
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE}${endpoint}`);
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  } catch (err) {
+    if (err.name === 'TypeError') throw new Error('Network error: unable to reach server');
+    throw err;
+  }
 }
 
 async function apiPost(endpoint, body) {
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  } catch (err) {
+    if (err.name === 'TypeError') throw new Error('Network error: unable to reach server');
+    throw err;
+  }
 }
 
 async function apiPut(endpoint, body) {
-  const res = await fetch(`${API_BASE}${endpoint}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  try {
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  } catch (err) {
+    if (err.name === 'TypeError') throw new Error('Network error: unable to reach server');
+    throw err;
+  }
 }
 
 /* ── Confirm Modal (Revoke) ──────────────────────────────────── */
@@ -874,7 +920,7 @@ document.getElementById('confirmModal').addEventListener('click', (e) => {
 /* ── Return Modal ────────────────────────────────────────────── */
 function openReturnModal(idx) {
   const r = records[idx];
-  if (r.status !== 'Issued') return;
+  if (!r || r.status !== 'Issued') return;
   returnTargetIdx = idx;
   document.getElementById('returnKeyId').textContent = r.keyId;
   document.getElementById('returnRecipient').textContent = r.recipient;
@@ -928,10 +974,14 @@ document.getElementById('returnModal').addEventListener('click', (e) => {
 /* ── Stats ───────────────────────────────────────────────────── */
 function stats() {
   const issued = new Set(records.filter(r => r.status === 'Issued').map(r => r.keyId));
-  document.getElementById('sTotal').textContent = 5;
-  document.getElementById('sAvail').textContent = 5 - issued.size;
-  document.getElementById('sIssued').textContent = issued.size;
-  document.getElementById('sRevoked').textContent = records.filter(r => r.status === 'Revoked').length;
+  const sTotal = document.getElementById('sTotal');
+  const sAvail = document.getElementById('sAvail');
+  const sIssued = document.getElementById('sIssued');
+  const sRevoked = document.getElementById('sRevoked');
+  if (sTotal) sTotal.textContent = 5;
+  if (sAvail) sAvail.textContent = 5 - issued.size;
+  if (sIssued) sIssued.textContent = issued.size;
+  if (sRevoked) sRevoked.textContent = records.filter(r => r.status === 'Revoked').length;
 }
 
 /* ── Key Selector ────────────────────────────────────────────── */
@@ -939,8 +989,9 @@ async function populateSel() {
   try {
     const avail = await apiGet('/api/keys/available');
     const sel = document.getElementById('fKey');
+    if (!sel) return;
     sel.innerHTML = avail.length
-      ? avail.map(k => `<option value="${k}">${k}</option>`).join('')
+      ? avail.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('')
       : '<option value="">No keys available</option>';
   } catch (err) {
     toast('Failed to load available keys', 'error');
@@ -1019,11 +1070,13 @@ async function loadRecords() {
 
 /* ── Actions ─────────────────────────────────────────────────── */
 function doReturn(i) {
+  if (!records[i]) return;
   openReturnModal(i);
 }
 
 async function doRevoke(i) {
   const r = records[i];
+  if (!r) return;
   confirmAction(
     'Revoke Key',
     `Are you sure you want to revoke ${r.keyId}? It was issued to ${r.recipient} in ${r.department || 'Unknown Department'}. This action cannot be undone.`,
@@ -1031,7 +1084,7 @@ async function doRevoke(i) {
       try {
         await apiPut(`/api/records/${r.id}/revoke`, {});
         await loadRecords();
-        toast(`${r.keyId} has been revoked`, 'error');
+        toast(`${r.keyId} has been revoked`);
       } catch (err) {
         toast(err.message, 'error');
       }
@@ -1116,7 +1169,7 @@ document.getElementById('csvBtn').addEventListener('click', async () => {
 
   const emailConfig = (smtpHost && smtpUser && smtpPass && recipients) ? {
     smtpHost,
-    smtpPort: smtpPort || 587,
+    smtpPort: smtpPort || 465,
     smtpUser,
     smtpPass,
     recipients
@@ -1138,7 +1191,7 @@ document.getElementById('csvBtn').addEventListener('click', async () => {
     document.body.removeChild(a);
 
     if (result.email.sent) {
-      toast(`CSV exported & emailed to ${result.email.recipients} recipient(s)`);
+      toast(`CSV exported & emailed to ${result.email.recipients || 0} recipient(s)`);
     } else if (result.email.error) {
       toast(`CSV downloaded. Email failed: ${result.email.error}`, 'error');
     } else {
@@ -1176,7 +1229,9 @@ document.getElementById('saveSettings').addEventListener('click', () => {
 });
 
 document.getElementById('settingsToggle').addEventListener('click', () => {
-  document.getElementById('settingsPanel').classList.toggle('show');
+  const panel = document.getElementById('settingsPanel');
+  const isExpanded = panel.classList.toggle('show');
+  document.getElementById('settingsToggle').setAttribute('aria-expanded', isExpanded);
 });
 
 /* ── Date Stamp ──────────────────────────────────────────────── */
@@ -1200,12 +1255,14 @@ document.addEventListener('keydown', (e) => {
 });
 
 /* ── Boot ────────────────────────────────────────────────────── */
-initSigPad('issueSigByCanvas', 'issueSigByClear');
-initSigPad('issueSigRecCanvas', 'issueSigRecClear');
-initSigPad('sigByCanvas', 'sigByClear');
-initSigPad('sigToCanvas', 'sigToClear');
-loadSettings();
-loadRecords();
+document.addEventListener('DOMContentLoaded', () => {
+  initSigPad('issueSigByCanvas', 'issueSigByClear');
+  initSigPad('issueSigRecCanvas', 'issueSigRecClear');
+  initSigPad('sigByCanvas', 'sigByClear');
+  initSigPad('sigToCanvas', 'sigToClear');
+  loadSettings();
+  loadRecords();
+});
 </script>
 </body>
 </html>
