@@ -362,6 +362,24 @@ tr:last-child td { border-bottom: none; }
 .modal-body { padding: 1.25rem 1.5rem; font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; }
 .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border-light); display: flex; justify-content: flex-end; gap: 8px; }
 
+/* ── Email Settings Panel ────────────────────────────────────── */
+.settings-toggle {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.8125rem; font-weight: 600; color: var(--text-secondary);
+  cursor: pointer; background: none; border: none; font-family: inherit;
+  padding: 4px 0; margin-bottom: 8px;
+}
+.settings-toggle:hover { color: var(--accent); }
+.settings-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  display: none;
+}
+.settings-panel.show { display: block; }
+
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .form-grid-4 { grid-template-columns: repeat(2, 1fr); }
@@ -440,6 +458,39 @@ tr:last-child td { border-bottom: none; }
     </div>
   </div>
 
+  <!-- Email Settings -->
+  <button class="settings-toggle" id="settingsToggle">
+    <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor"/></svg>
+    Email & Export Settings
+  </button>
+  <div class="settings-panel" id="settingsPanel">
+    <div class="form-grid-2">
+      <div class="field">
+        <label>SMTP Host</label>
+        <input id="smtpHost" placeholder="smtp.gmail.com" />
+      </div>
+      <div class="field">
+        <label>SMTP Port</label>
+        <input id="smtpPort" placeholder="587" value="587" />
+      </div>
+    </div>
+    <div class="form-grid-2">
+      <div class="field">
+        <label>SMTP Username</label>
+        <input id="smtpUser" placeholder="your-email@gmail.com" />
+      </div>
+      <div class="field">
+        <label>SMTP Password / App Password</label>
+        <input id="smtpPass" type="password" placeholder="••••••••" />
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:12px;">
+      <label>Export Recipients (comma-separated)</label>
+      <input id="emailRecipients" placeholder="manager@company.com, security@company.com" />
+    </div>
+    <button class="btn btn-ghost btn-sm" id="saveSettings">Save Settings</button>
+  </div>
+
   <!-- Issue Panel -->
   <div class="panel">
     <div class="panel-header">
@@ -476,7 +527,6 @@ tr:last-child td { border-bottom: none; }
         </div>
       </div>
 
-      <!-- Issue Signatures -->
       <div class="form-grid-2" style="margin-bottom:12px;">
         <div class="field">
           <label>Issued by — signature<span class="req">*</span></label>
@@ -533,7 +583,7 @@ tr:last-child td { border-bottom: none; }
         <thead>
           <tr>
             <th>Key ID</th><th>Department</th><th>Issued by</th><th>Recipient</th><th>Purpose</th>
-            <th>Date issued</th><th>Date returned</th><th>Returned by</th><th>Returned to</th><th>Status</th><th>Actions</th><th>hjk</th>
+            <th>Date issued</th><th>Date returned</th><th>Returned by</th><th>Returned to</th><th>Status</th><th>Actions</th>
           </tr>
         </thead>
         <tbody id="tBody"></tbody>
@@ -616,9 +666,8 @@ tr:last-child td { border-bottom: none; }
 </div>
 
 <script>
-/* ── Constants ───────────────────────────────────────────────── */
-const KEYS = ['KEY-101','KEY-102','KEY-103','KEY-104','KEY-105'];
-const SK = 'icps_v8';
+/* ── API Base URL ────────────────────────────────────────────── */
+const API_BASE = window.location.origin; // Same origin as the page
 
 /* ── State ───────────────────────────────────────────────────── */
 let records = [];
@@ -662,7 +711,6 @@ function initSigPad(canvasId, clearBtnId) {
     const pos = getPos(e);
     ctx.beginPath();
     ctx.moveTo(pos.x, pos.y);
-    // Remove red border on interaction
     canvas.parentElement.classList.remove('missing');
     e.preventDefault();
   }
@@ -741,14 +789,7 @@ const ICONS = {
   inbox: '<svg class="icon" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor"/></svg>'
 };
 
-/* ── Init ────────────────────────────────────────────────────── */
-try { records = JSON.parse(localStorage.getItem(SK)) || []; } catch(e) { records = []; }
-
 /* ── Helpers ─────────────────────────────────────────────────── */
-function save() {
-  try { localStorage.setItem(SK, JSON.stringify(records)); } catch(e) {}
-}
-
 function fmt(ts) {
   if (!ts) return '—';
   const d = new Date(ts);
@@ -775,6 +816,33 @@ function toast(msg, type = 'success') {
     el.classList.remove('show');
     setTimeout(() => el.remove(), 300);
   }, 3000);
+}
+
+/* ── API Helpers ─────────────────────────────────────────────── */
+async function apiGet(endpoint) {
+  const res = await fetch(`${API_BASE}${endpoint}`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function apiPost(endpoint, body) {
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+async function apiPut(endpoint, body) {
+  const res = await fetch(`${API_BASE}${endpoint}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
 }
 
 /* ── Confirm Modal (Revoke) ──────────────────────────────────── */
@@ -824,7 +892,7 @@ function closeReturnModal() {
 
 document.getElementById('returnCancel').addEventListener('click', closeReturnModal);
 
-document.getElementById('returnConfirm').addEventListener('click', () => {
+document.getElementById('returnConfirm').addEventListener('click', async () => {
   if (returnTargetIdx === null) return;
   const returnedBy = document.getElementById('rReturnedBy').value.trim();
   const returnedTo = document.getElementById('rReturnedTo').value.trim();
@@ -838,18 +906,19 @@ document.getElementById('returnConfirm').addEventListener('click', () => {
   if (sigToBlank) { flashMissing('wrapRetSigTo'); toast('Please provide signature for "Returned to"', 'error'); hasError = true; }
   if (hasError) return;
 
-  const sigBy = getSigData('sigByCanvas');
-  const sigTo = getSigData('sigToCanvas');
-
-  records[returnTargetIdx].status = 'Available';
-  records[returnTargetIdx].dateReturned = Date.now();
-  records[returnTargetIdx].returnedBy = returnedBy;
-  records[returnTargetIdx].returnedTo = returnedTo;
-  records[returnTargetIdx].sigBy = sigBy;
-  records[returnTargetIdx].sigTo = sigTo;
-  save(); render();
-  closeReturnModal();
-  toast(`${records[returnTargetIdx].keyId} returned successfully`);
+  try {
+    await apiPut(`/api/records/${records[returnTargetIdx].id}/return`, {
+      returnedBy,
+      returnedTo,
+      sigBy: getSigData('sigByCanvas'),
+      sigTo: getSigData('sigToCanvas')
+    });
+    await loadRecords();
+    closeReturnModal();
+    toast(`${records[returnTargetIdx].keyId} returned successfully`);
+  } catch (err) {
+    toast(err.message, 'error');
+  }
 });
 
 document.getElementById('returnModal').addEventListener('click', (e) => {
@@ -859,20 +928,23 @@ document.getElementById('returnModal').addEventListener('click', (e) => {
 /* ── Stats ───────────────────────────────────────────────────── */
 function stats() {
   const issued = new Set(records.filter(r => r.status === 'Issued').map(r => r.keyId));
-  document.getElementById('sTotal').textContent = KEYS.length;
-  document.getElementById('sAvail').textContent = KEYS.filter(k => !issued.has(k)).length;
+  document.getElementById('sTotal').textContent = 5;
+  document.getElementById('sAvail').textContent = 5 - issued.size;
   document.getElementById('sIssued').textContent = issued.size;
   document.getElementById('sRevoked').textContent = records.filter(r => r.status === 'Revoked').length;
 }
 
 /* ── Key Selector ────────────────────────────────────────────── */
-function populateSel() {
-  const sel = document.getElementById('fKey');
-  const out = new Set(records.filter(r => r.status === 'Issued').map(r => r.keyId));
-  const avail = KEYS.filter(k => !out.has(k));
-  sel.innerHTML = avail.length
-    ? avail.map(k => `<option value="${k}">${k}</option>`).join('')
-    : '<option value="">No keys available</option>';
+async function populateSel() {
+  try {
+    const avail = await apiGet('/api/keys/available');
+    const sel = document.getElementById('fKey');
+    sel.innerHTML = avail.length
+      ? avail.map(k => `<option value="${k}">${k}</option>`).join('')
+      : '<option value="">No keys available</option>';
+  } catch (err) {
+    toast('Failed to load available keys', 'error');
+  }
 }
 
 /* ── Filter & Search ─────────────────────────────────────────── */
@@ -935,20 +1007,34 @@ function render() {
   }).join('');
 }
 
+/* ── Load Records ────────────────────────────────────────────── */
+async function loadRecords() {
+  try {
+    records = await apiGet('/api/records');
+    render();
+  } catch (err) {
+    toast('Failed to load records from database', 'error');
+  }
+}
+
 /* ── Actions ─────────────────────────────────────────────────── */
 function doReturn(i) {
   openReturnModal(i);
 }
 
-function doRevoke(i) {
+async function doRevoke(i) {
   const r = records[i];
   confirmAction(
     'Revoke Key',
     `Are you sure you want to revoke ${r.keyId}? It was issued to ${r.recipient} in ${r.department || 'Unknown Department'}. This action cannot be undone.`,
-    () => {
-      records[i].status = 'Revoked';
-      save(); render();
-      toast(`${r.keyId} has been revoked`, 'error');
+    async () => {
+      try {
+        await apiPut(`/api/records/${r.id}/revoke`, {});
+        await loadRecords();
+        toast(`${r.keyId} has been revoked`, 'error');
+      } catch (err) {
+        toast(err.message, 'error');
+      }
     }
   );
 }
@@ -964,7 +1050,7 @@ document.getElementById('tBody').addEventListener('click', (e) => {
 });
 
 /* ── Issue Key ───────────────────────────────────────────────── */
-document.getElementById('issueBtn').addEventListener('click', () => {
+document.getElementById('issueBtn').addEventListener('click', async () => {
   const by = document.getElementById('fBy').value.trim();
   const dept = document.getElementById('fDept').value;
   const rec = document.getElementById('fRec').value.trim();
@@ -982,37 +1068,26 @@ document.getElementById('issueBtn').addEventListener('click', () => {
   if (issueSigRecBlank) { flashMissing('wrapIssueSigRec'); toast('Please provide signature for "Recipient"', 'error'); hasError = true; }
   if (hasError) return;
 
-  if (records.find(r => r.keyId === kid && r.status === 'Issued')) {
-    toast('Key already issued', 'error');
-    return;
+  try {
+    await apiPost('/api/records', {
+      keyId: kid,
+      issuedBy: by,
+      department: dept,
+      recipient: rec,
+      purpose: pur,
+      issueSigBy: getSigData('issueSigByCanvas'),
+      issueSigRec: getSigData('issueSigRecCanvas')
+    });
+    await loadRecords();
+    document.getElementById('fBy').value = '';
+    document.getElementById('fDept').value = '';
+    document.getElementById('fRec').value = '';
+    document.getElementById('fPur').value = '';
+    clearIssueSigs();
+    toast(`${kid} issued to ${rec}`);
+  } catch (err) {
+    toast(err.message, 'error');
   }
-
-  const issueSigBy = getSigData('issueSigByCanvas');
-  const issueSigRec = getSigData('issueSigRecCanvas');
-
-  records.push({
-    keyId: kid,
-    issuedBy: by,
-    department: dept,
-    recipient: rec,
-    purpose: pur,
-    dateIssued: Date.now(),
-    dateReturned: null,
-    returnedBy: null,
-    returnedTo: null,
-    sigBy: null,
-    sigTo: null,
-    issueSigBy: issueSigBy,
-    issueSigRec: issueSigRec,
-    status: 'Issued'
-  });
-  save(); render();
-  document.getElementById('fBy').value = '';
-  document.getElementById('fDept').value = '';
-  document.getElementById('fRec').value = '';
-  document.getElementById('fPur').value = '';
-  clearIssueSigs();
-  toast(`${kid} issued to ${rec}`);
 });
 
 /* ── Search ──────────────────────────────────────────────────── */
@@ -1031,28 +1106,77 @@ document.querySelectorAll('.ftab').forEach(t => {
   });
 });
 
-/* ── CSV Export ──────────────────────────────────────────────── */
-document.getElementById('csvBtn').addEventListener('click', () => {
-  const data = filtered();
-  const hdr = ['Key ID','Department','Issued By','Has Issue Sig By','Recipient','Has Received Sig','Purpose','Date Issued','Date Returned','Returned By','Returned To','Has Return Sig By','Has Return Sig To','Status'];
-  const rows = data.map(r => [
-    r.keyId, r.department || '', r.issuedBy,r.issueSigBy ? 'Yes' : 'No', r.recipient, r.issueSigRec ? 'Yes' : 'No', r.purpose,
-    fmt(r.dateIssued), fmt(r.dateReturned), r.returnedBy || '', r.returnedTo || '',
-    r.sigBy ? 'Yes' : 'No', r.sigTo ? 'Yes' : 'No', r.status
-  ]);
-  const csv = [hdr, ...rows]
-    .map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))
-    .join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `icps_keys_${new Date().toISOString().slice(0,10)}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  toast('CSV exported successfully');
+/* ── CSV Export + Email ──────────────────────────────────────── */
+document.getElementById('csvBtn').addEventListener('click', async () => {
+  const smtpHost = document.getElementById('smtpHost').value.trim();
+  const smtpPort = document.getElementById('smtpPort').value.trim();
+  const smtpUser = document.getElementById('smtpUser').value.trim();
+  const smtpPass = document.getElementById('smtpPass').value;
+  const recipients = document.getElementById('emailRecipients').value.trim();
+
+  const emailConfig = (smtpHost && smtpUser && smtpPass && recipients) ? {
+    smtpHost,
+    smtpPort: smtpPort || 587,
+    smtpUser,
+    smtpPass,
+    recipients
+  } : null;
+
+  try {
+    const result = await apiPost('/api/export', {
+      filter: filter === 'all' ? null : filter,
+      search: search || null,
+      emailConfig
+    });
+
+    // Download the file
+    const a = document.createElement('a');
+    a.href = `${API_BASE}${result.downloadUrl}`;
+    a.download = result.filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    if (result.email.sent) {
+      toast(`CSV exported & emailed to ${result.email.recipients} recipient(s)`);
+    } else if (result.email.error) {
+      toast(`CSV downloaded. Email failed: ${result.email.error}`, 'error');
+    } else {
+      toast('CSV exported. Configure email settings to send automatically.');
+    }
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+});
+
+/* ── Email Settings ──────────────────────────────────────────── */
+const SETTINGS_KEY = 'icps_email_settings';
+
+function loadSettings() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {};
+    if (s.smtpHost) document.getElementById('smtpHost').value = s.smtpHost;
+    if (s.smtpPort) document.getElementById('smtpPort').value = s.smtpPort;
+    if (s.smtpUser) document.getElementById('smtpUser').value = s.smtpUser;
+    if (s.smtpPass) document.getElementById('smtpPass').value = s.smtpPass;
+    if (s.recipients) document.getElementById('emailRecipients').value = s.recipients;
+  } catch(e) {}
+}
+
+document.getElementById('saveSettings').addEventListener('click', () => {
+  const settings = {
+    smtpHost: document.getElementById('smtpHost').value.trim(),
+    smtpPort: document.getElementById('smtpPort').value.trim(),
+    smtpUser: document.getElementById('smtpUser').value.trim(),
+    smtpPass: document.getElementById('smtpPass').value,
+    recipients: document.getElementById('emailRecipients').value.trim()
+  };
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  toast('Email settings saved');
+});
+
+document.getElementById('settingsToggle').addEventListener('click', () => {
+  document.getElementById('settingsPanel').classList.toggle('show');
 });
 
 /* ── Date Stamp ──────────────────────────────────────────────── */
@@ -1080,7 +1204,8 @@ initSigPad('issueSigByCanvas', 'issueSigByClear');
 initSigPad('issueSigRecCanvas', 'issueSigRecClear');
 initSigPad('sigByCanvas', 'sigByClear');
 initSigPad('sigToCanvas', 'sigToClear');
-render();
+loadSettings();
+loadRecords();
 </script>
 </body>
 </html>
