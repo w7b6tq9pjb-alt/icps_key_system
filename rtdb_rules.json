@@ -1,0 +1,20 @@
+{
+  "rules": {
+    "keys": {
+      ".read": true,
+      ".write": true
+    },
+    "records": {
+      ".read": true,
+      ".write": true
+    },
+    "_connection_test": {
+      ".read": true,
+      ".write": true
+    },
+    "_health": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}
