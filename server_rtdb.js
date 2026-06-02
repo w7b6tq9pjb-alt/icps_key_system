@@ -128,32 +128,7 @@ const asyncHandler = (fn) => (req, res, next) => {
 // ═══════════════════════════════════════════════════════════════
 // SEED DEFAULT KEYS
 // ═══════════════════════════════════════════════════════════════
-async function seedKeys() {
-  console.log('Checking/Seeding default keys...');
 
-  try {
-    const snap = await keysRef.once('value');
-    if (snap.exists() && Object.keys(snap.val() || {}).length > 0) {
-      console.log('✅ Keys already exist\n');
-      return;
-    }
-
-    const keys = {};
-    ['KEY-001', 'KEY-002', 'KEY-003', 'KEY-004', 'KEY-005'].forEach(keyId => {
-      keys[keyId] = {
-        keyId,
-        label: `Master Key ${keyId.split('-')[1]}`,
-        location: 'Main Office',
-        createdAt: Date.now()
-      };
-    });
-
-    await keysRef.set(keys);
-    console.log('✅ Seeded 5 default keys\n');
-  } catch (err) {
-    console.error('❌ Seed failed:', err.message);
-  }
-}
 
 // ═══════════════════════════════════════════════════════════════
 // API ROUTES
@@ -181,6 +156,59 @@ app.get('/api/keys/available', asyncHandler(async (req, res) => {
     console.error('Error:', err.message);
     res.status(500).json({ error: err.message });
   }
+  // POST /api/keys — Create new key
+app.post('/api/keys', asyncHandler(async (req, res) => {
+
+  const { keyId, label, location } = req.body;
+
+  if (!keyId) {
+    return res.status(400).json({
+      error: 'Key ID is required'
+    });
+  }
+
+  const cleanKey = keyId.trim().toUpperCase();
+
+  // Check if key already exists
+  const existing = await keysRef.child(cleanKey).once('value');
+
+  if (existing.exists()) {
+    return res.status(409).json({
+      error: 'Key already exists'
+    });
+  }
+
+  const keyData = {
+    keyId: cleanKey,
+    label: label || '',
+    location: location || '',
+    createdAt: Date.now()
+  };
+
+  await keysRef.child(cleanKey).set(keyData);
+
+  res.status(201).json({
+    message: 'Key created successfully',
+    key: keyData
+  });
+
+}));
+// GET /api/keys
+app.get('/api/keys', asyncHandler(async (req, res) => {
+
+  const snap = await keysRef.once('value');
+
+  const data = snap.val() || {};
+
+  const keys = Object.values(data);
+
+  keys.sort((a, b) => {
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  });
+
+  res.json(keys);
+
+}));
 }));
 
 // GET /api/records — All records
@@ -454,12 +482,10 @@ app.use((err, req, res, next) => {
 async function start() {
   const connected = await testConnection();
 
-  if (!connected) {
-    console.log('\n⚠️  Starting server anyway for debugging...');
-    console.log('   Check http://localhost:' + PORT + '/api/health\n');
-  } else {
-    await seedKeys();
-  }
+ if (!connected) {
+  console.log('\n⚠️ Starting server anyway for debugging...');
+  console.log('Check http://localhost:' + PORT + '/api/health\n');
+}
 
   app.listen(PORT, () => {
     console.log('═══════════════════════════════════════════════════════');

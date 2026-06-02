@@ -517,6 +517,41 @@ tr:last-child td { border-bottom: none; }
   </div>
 
   <!-- Issue Panel -->
+   <!-- Add Key Panel -->
+<div class="panel">
+
+  <div class="panel-header">
+    Add New Key
+  </div>
+
+  <div class="panel-body">
+
+    <div class="form-grid-3">
+
+      <div class="field">
+        <label>Key ID</label>
+        <input id="newKeyId" placeholder="KEY-001">
+      </div>
+
+      <div class="field">
+        <label>Label</label>
+        <input id="newKeyLabel" placeholder="Main Office Key">
+      </div>
+
+      <div class="field">
+        <label>Location</label>
+        <input id="newKeyLocation" placeholder="Security Room">
+      </div>
+
+    </div>
+
+    <button class="btn btn-primary" id="addKeyBtn">
+      Add Key
+    </button>
+
+  </div>
+
+</div>
   <div class="panel">
     <div class="panel-header">
       <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8m-4-4h8" stroke="currentColor"/></svg>
@@ -982,16 +1017,25 @@ document.getElementById('returnModal').addEventListener('click', (e) => {
 });
 
 /* ── Stats ───────────────────────────────────────────────────── */
+let allKeys = [];
+
 function stats() {
-  const issued = new Set(records.filter(r => r.status === 'Issued').map(r => r.keyId));
-  const sTotal = document.getElementById('sTotal');
-  const sAvail = document.getElementById('sAvail');
-  const sIssued = document.getElementById('sIssued');
-  const sRevoked = document.getElementById('sRevoked');
-  if (sTotal) sTotal.textContent = 5;
-  if (sAvail) sAvail.textContent = 5 - issued.size;
-  if (sIssued) sIssued.textContent = issued.size;
-  if (sRevoked) sRevoked.textContent = records.filter(r => r.status === 'Revoked').length;
+
+  const totalKeys = allKeys.length;
+
+  const issued = records.filter(r => r.status === 'Issued');
+
+  const revoked = records.filter(r => r.status === 'Revoked');
+
+  const available = totalKeys - issued.length - revoked.length;
+
+  document.getElementById('sTotal').textContent = totalKeys;
+
+  document.getElementById('sAvail').textContent = available;
+
+  document.getElementById('sIssued').textContent = issued.length;
+
+  document.getElementById('sRevoked').textContent = revoked.length;
 }
 
 /* ── Key Selector ────────────────────────────────────────────── */
@@ -1077,7 +1121,21 @@ async function loadRecords() {
     toast('Failed to load records from database', 'error');
   }
 }
+async function loadKeys() {
 
+  try {
+
+    allKeys = await apiGet('/api/keys');
+
+    stats();
+
+  } catch (err) {
+
+    toast('Failed to load keys', 'error');
+
+  }
+
+}
 /* ── Actions ─────────────────────────────────────────────────── */
 function doReturn(i) {
   if (!records[i]) return;
@@ -1151,6 +1209,49 @@ document.getElementById('issueBtn').addEventListener('click', async () => {
   } catch (err) {
     toast(err.message, 'error');
   }
+});
+/* add a key */
+document.getElementById('addKeyBtn').addEventListener('click', async () => {
+
+  const keyId = document.getElementById('newKeyId').value.trim();
+
+  const label = document.getElementById('newKeyLabel').value.trim();
+
+  const location = document.getElementById('newKeyLocation').value.trim();
+
+  if (!keyId) {
+
+    toast('Key ID required', 'error');
+
+    return;
+  }
+
+  try {
+
+    await apiPost('/api/keys', {
+      keyId,
+      label,
+      location
+    });
+
+    document.getElementById('newKeyId').value = '';
+
+    document.getElementById('newKeyLabel').value = '';
+
+    document.getElementById('newKeyLocation').value = '';
+
+    await loadKeys();
+
+    await populateSel();
+
+    toast(`${keyId} added successfully`);
+
+  } catch (err) {
+
+    toast(err.message, 'error');
+
+  }
+
 });
 
 /* ── Search ──────────────────────────────────────────────────── */
@@ -1265,13 +1366,20 @@ document.addEventListener('keydown', (e) => {
 });
 
 /* ── Boot ────────────────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+
   initSigPad('issueSigByCanvas', 'issueSigByClear');
   initSigPad('issueSigRecCanvas', 'issueSigRecClear');
   initSigPad('sigByCanvas', 'sigByClear');
   initSigPad('sigToCanvas', 'sigToClear');
+
   loadSettings();
-  loadRecords();
+
+  await Promise.all([
+    loadRecords(),
+    loadKeys()
+  ]);
+
 });
 
 </script>
