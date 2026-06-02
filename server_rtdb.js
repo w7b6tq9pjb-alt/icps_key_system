@@ -189,11 +189,17 @@ app.get('/api/records', asyncHandler(async (req, res) => {
     const { status, search, limit = 100 } = req.query;
 
     const snap = await recordsRef.once('value');
+    const rawData = snap.val();
     let records = [];
 
-    snap.forEach(child => {
-      records.push({ id: child.key, ...child.val() });
-    });
+    // FIX: Handle null/undefined RTDB responses
+    if (rawData && typeof rawData === 'object') {
+      Object.entries(rawData).forEach(([key, value]) => {
+        if (value && typeof value === 'object') {
+          records.push({ id: key, ...value });
+        }
+      });
+    }
 
     // Sort by dateIssued desc (newest first)
     records.sort((a, b) => (b.dateIssued || 0) - (a.dateIssued || 0));
