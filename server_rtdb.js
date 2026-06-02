@@ -386,8 +386,14 @@ app.post('/api/export', asyncHandler(async (req, res) => {
     const { filter, search, emailConfig } = req.body;
 
     const snap = await recordsRef.once('value');
-    let records = [];
-    snap.forEach(child => records.push({ id: child.key, ...child.val() }));
+const rawData = snap.val();  // Returns the full object
+let records = [];
+
+if (rawData && typeof rawData === 'object') {
+  Object.entries(rawData).forEach(([key, value]) => {  // ✅ Iterates all
+    records.push({ id: key, ...value });
+  });
+}
 
     if (filter && filter !== 'all') {
       records = records.filter(r => r.status === filter);

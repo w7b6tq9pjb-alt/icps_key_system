@@ -164,7 +164,8 @@ body {
   outline: none;
 }
 
-/* ── Signature Pad ───────────────────────────────────────────── */
+/* ── Signature Pad (Unified) ───────────────────────────── */
+
 .sig-wrap {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -172,15 +173,24 @@ body {
   overflow: hidden;
   position: relative;
   transition: var(--transition);
+
+  width: 320px;        /* fixed width */
+  height: 120px;       /* fixed height */
 }
-.sig-wrap.missing { border-color: var(--danger); box-shadow: 0 0 0 3px var(--danger-bg); }
+
+.sig-wrap.missing {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px var(--danger-bg);
+}
+
 .sig-wrap canvas {
-  display: block;
   width: 100%;
-  height: 120px;
+  height: 100%;
+  display: block;
   cursor: crosshair;
   touch-action: none;
 }
+
 .sig-clear {
   position: absolute;
   top: 6px;
@@ -196,8 +206,12 @@ body {
   font-family: inherit;
   transition: var(--transition);
 }
-.sig-clear:hover { color: var(--danger); border-color: var(--danger); background: var(--danger-bg); }
 
+.sig-clear:hover {
+  color: var(--danger);
+  border-color: var(--danger);
+  background: var(--danger-bg);
+}
 /* ── Buttons ─────────────────────────────────────────────────── */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -256,7 +270,7 @@ body {
 .ftab.on { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: var(--shadow-sm); }
 
 /* ── Table ───────────────────────────────────────────────────── */
-.tbl-wrap { overflow-x: auto; padding: 0 1.5rem; }
+.tbl-wrap { overflow-x: auto; overflow-y: auto; max-height: 400px; padding: 0 1.5rem; }
 table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.8125rem; }
 col.c-key { width: 85px; }
 col.c-dept { width: 100px; }
