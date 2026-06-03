@@ -1,5 +1,5 @@
 // server.js — Express + Firebase Realtime Database
-// This version uses RTDB which is simpler and more reliable than Firestore
+// Monthly auto-refresh: archives previous month, resets current month records
 
 const express = require('express');
 const admin = require('firebase-admin');
@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 3000;
 
 console.log('\n═══════════════════════════════════════════════════════');
 console.log('  ICPS Key System — Realtime Database Edition');
+console.log('  Monthly Auto-Refresh + Archive Enabled');
 console.log('═══════════════════════════════════════════════════════\n');
 
 // ═══════════════════════════════════════════════════════════════
@@ -45,7 +46,6 @@ try {
 // ═══════════════════════════════════════════════════════════════
 // STEP 2: INITIALIZE WITH REALTIME DATABASE URL
 // ═══════════════════════════════════════════════════════════════
-// The database URL is ALWAYS: https://<PROJECT-ID>-default-rtdb.firebaseio.com
 const databaseURL = `https://${serviceAccount.project_id}-default-rtdb.firebaseio.com`;
 console.log('   Database URL:', databaseURL);
 
@@ -63,9 +63,205 @@ try {
 const db = admin.database();
 const keysRef = db.ref('keys');
 const recordsRef = db.ref('records');
+const archivesRef = db.ref('archives');
 
 // ═══════════════════════════════════════════════════════════════
-// STEP 3: TEST CONNECTION
+// STEP 3: MONTHLY AUTO-REFRESH & ARCHIVING SYSTEM
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Gets current month key in format YYYY-MM
+ */
+function getCurrentMonthKey() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/**
+ * Gets previous month key in format YYYY-MM
+ */
+function getPreviousMonthKey() {
+  const now = new Date();
+  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  return `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/**
+ * Get month key from a timestamp
+ */
+function getMonthFromTimestamp(timestamp) {
+  const d = new Date(timestamp);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/**
+ * Archives current records to the previous month's archive
+ * Then clears current records for the new month
+ */
+async function performMonthlyArchive(targetMonth = null) {
+  // targetMonth: the month to archive TO (e.g., "2026-06")
+  // If not provided, uses previous month from current date
+  const archiveToMonth = targetMonth || getPreviousMonthKey();
+  const currentMonth = getCurrentMonthKey();
+
+  console.log(`\n📅 Monthly Archive — Current: ${currentMonth}, Archiving to: ${archiveToMonth}`);
+  console.log(`   Server time: ${new Date().toISOString()}`);
+
+  try {
+    // 1. Get all current records
+    const recordsSnap = await recordsRef.once('value');
+    const currentRecords = recordsSnap.val() || {};
+    const recordCount = Object.keys(currentRecords).length;
+
+    if (recordCount === 0) {
+      console.log('   ℹ️ No records to archive');
+      return { archived: 0, archiveToMonth };
+    }
+
+    console.log(`   📦 Found ${recordCount} records to archive to ${archiveToMonth}`);
+
+    // 2. Archive to target month (merge with existing if any)
+    const archiveRef = archivesRef.child(archiveToMonth);
+    const existingArchiveSnap = await archiveRef.once('value');
+    const existingArchive = existingArchiveSnap.val() || {};
+
+    // Merge: keep existing archived records + add new ones
+    const mergedArchive = { ...existingArchive };
+    Object.entries(currentRecords).forEach(([key, value]) => {
+      // Only archive records that were actually issued (not just available keys)
+      if (value && value.dateIssued) {
+        mergedArchive[key] = {
+          ...value,
+          archivedAt: Date.now(),
+          archivedMonth: archiveToMonth
+        };
+      }
+    });
+
+    await archiveRef.set(mergedArchive);
+    console.log(`   ✅ Archived to ${archiveToMonth}: ${Object.keys(mergedArchive).length} total records`);
+
+    // 3. Generate archive summary
+    const summary = {
+      month: archiveToMonth,
+      archivedAt: Date.now(),
+      recordCount: Object.keys(mergedArchive).length,
+      statuses: {}
+    };
+
+    Object.values(mergedArchive).forEach(r => {
+      const status = r.status || 'Unknown';
+      summary.statuses[status] = (summary.statuses[status] || 0) + 1;
+    });
+
+    await archivesRef.child('_summaries').child(archiveToMonth).set(summary);
+    console.log(`   📊 Archive summary:`, summary.statuses);
+
+    // 4. Clear current records (keep keys intact)
+    await recordsRef.remove();
+    console.log('   🧹 Current records cleared for new month');
+
+    // 5. Reset all keys to Available status for the new month
+    const keysSnap = await keysRef.once('value');
+    const allKeys = keysSnap.val() || {};
+
+    // Keys stay in registry, just records are cleared
+    console.log(`   🔑 ${Object.keys(allKeys).length} keys remain in registry`);
+
+    return { 
+      archived: Object.keys(mergedArchive).length, 
+      archiveToMonth,
+      summary 
+    };
+
+  } catch (err) {
+    console.error('❌ Archive failed:', err.message);
+    throw err;
+  }
+}
+
+/**
+ * Check if we need to run monthly archive (first request of new month)
+ */
+let lastCheckedMonth = null;
+let archiveInProgress = false;
+
+async function checkMonthlyArchive(force = false) {
+  const currentMonth = getCurrentMonthKey();
+
+  console.log(`\n🔍 Archive check: currentMonth=${currentMonth}, lastChecked=${lastCheckedMonth}, force=${force}, inProgress=${archiveInProgress}`);
+
+  // Skip if already checked this month or archive in progress
+  // But DON'T skip on force (startup check)
+  if (!force && lastCheckedMonth === currentMonth || archiveInProgress) {
+    console.log(`   ⏭️ Skipping archive check (already checked or in progress)`);
+    return null;
+  }
+
+  archiveInProgress = true;
+
+  try {
+    // Check if records exist from previous month
+    const recordsSnap = await recordsRef.once('value');
+    const records = recordsSnap.val() || {};
+
+    // If there are records, check if any are from previous month
+    let hasOldRecords = false;
+    let oldMonth = null;
+
+    Object.values(records).forEach(r => {
+      if (r.dateIssued) {
+        const issuedDate = new Date(r.dateIssued);
+        const issuedMonth = `${issuedDate.getFullYear()}-${String(issuedDate.getMonth() + 1).padStart(2, '0')}`;
+        if (issuedMonth !== currentMonth) {
+          hasOldRecords = true;
+          oldMonth = issuedMonth; // Track the actual old month
+        }
+      }
+    });
+
+    if (hasOldRecords) {
+      console.log(`\n🔄 Auto-archive triggered: Found records from ${oldMonth} (current is ${currentMonth})`);
+      const result = await performMonthlyArchive();
+      lastCheckedMonth = currentMonth;
+      return result;
+    } else {
+      lastCheckedMonth = currentMonth;
+      return null;
+    }
+
+  } catch (err) {
+    console.error('Archive check failed:', err);
+    return null;
+  } finally {
+    archiveInProgress = false;
+  }
+}
+
+/**
+ * Startup archive check — runs once when server starts
+ * This handles the case where server was down during month rollover
+ * or when testing with fake dates
+ */
+async function startupArchiveCheck() {
+  console.log('\n🔍 Running startup archive check...');
+  const result = await checkMonthlyArchive(true); // force = true
+  if (result) {
+    console.log(`✅ Startup archive complete: ${result.archived} records archived to ${result.previousMonth}`);
+  } else {
+    console.log('ℹ️ No old records found — ready for current month');
+  }
+}
+
+/**
+ * Manual archive trigger (for testing or admin use)
+ */
+async function manualArchive(targetMonth = null) {
+  return await performMonthlyArchive(targetMonth);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STEP 4: TEST CONNECTION
 // ═══════════════════════════════════════════════════════════════
 async function testConnection() {
   try {
@@ -118,17 +314,27 @@ app.use((req, res, next) => {
   next();
 });
 
+// Auto-archive check on every request (lightweight, only runs on month change)
+app.use(async (req, res, next) => {
+  // Skip for static files and health checks to avoid overhead
+  if (req.path.startsWith('/exports') || req.path === '/api/health' || req.path === '/api/archive/status') {
+    return next();
+  }
+
+  try {
+    await checkMonthlyArchive();
+  } catch (err) {
+    console.error('Auto-archive check error:', err.message);
+  }
+  next();
+});
+
 // ═══════════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════════
 const asyncHandler = (fn) => (req, res, next) => {
   Promise.resolve(fn(req, res, next)).catch(next);
 };
-
-// ═══════════════════════════════════════════════════════════════
-// SEED DEFAULT KEYS
-// ═══════════════════════════════════════════════════════════════
-
 
 // ═══════════════════════════════════════════════════════════════
 // API ROUTES
@@ -156,9 +362,10 @@ app.get('/api/keys/available', asyncHandler(async (req, res) => {
     console.error('Error:', err.message);
     res.status(500).json({ error: err.message });
   }
-  // POST /api/keys — Create new key
-app.post('/api/keys', asyncHandler(async (req, res) => {
+}));
 
+// POST /api/keys — Create new key
+app.post('/api/keys', asyncHandler(async (req, res) => {
   const { keyId, label, location } = req.body;
 
   if (!keyId) {
@@ -191,27 +398,20 @@ app.post('/api/keys', asyncHandler(async (req, res) => {
     message: 'Key created successfully',
     key: keyData
   });
-
 }));
+
 // GET /api/keys
 app.get('/api/keys', asyncHandler(async (req, res) => {
-
   const snap = await keysRef.once('value');
-
   const data = snap.val() || {};
-
   const keys = Object.values(data);
-
   keys.sort((a, b) => {
     return (b.createdAt || 0) - (a.createdAt || 0);
   });
-
   res.json(keys);
-
-}));
 }));
 
-// GET /api/records — All records
+// GET /api/records — All CURRENT month records (auto-refreshed)
 app.get('/api/records', asyncHandler(async (req, res) => {
   try {
     const { status, search, limit = 100 } = req.query;
@@ -254,6 +454,114 @@ app.get('/api/records', asyncHandler(async (req, res) => {
     console.error('Error in /api/records:', err.message);
     res.status(500).json({ error: err.message });
   }
+}));
+
+// GET /api/archives — List all archived months
+app.get('/api/archives', asyncHandler(async (req, res) => {
+  try {
+    const snap = await archivesRef.once('value');
+    const data = snap.val() || {};
+
+    // Filter out _summaries key
+    const months = Object.keys(data).filter(k => !k.startsWith('_'));
+
+    // Get summaries if available
+    const summaries = data._summaries || {};
+
+    const archives = months.map(month => ({
+      month,
+      recordCount: summaries[month]?.recordCount || Object.keys(data[month] || {}).length,
+      archivedAt: summaries[month]?.archivedAt || null,
+      statuses: summaries[month]?.statuses || {}
+    }));
+
+    // Sort by month descending
+    archives.sort((a, b) => b.month.localeCompare(a.month));
+
+    res.json({
+      currentMonth: getCurrentMonthKey(),
+      archives
+    });
+  } catch (err) {
+    console.error('Error fetching archives:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+}));
+
+// GET /api/archives/:month — Get records from a specific archived month
+app.get('/api/archives/:month', asyncHandler(async (req, res) => {
+  try {
+    const { month } = req.params;
+
+    // Validate month format (YYYY-MM)
+    if (!/^\d{4}-\d{2}$/.test(month)) {
+      return res.status(400).json({ error: 'Invalid month format. Use YYYY-MM' });
+    }
+
+    const snap = await archivesRef.child(month).once('value');
+    const data = snap.val() || {};
+
+    let records = [];
+    Object.entries(data).forEach(([key, value]) => {
+      if (value && typeof value === 'object' && !key.startsWith('_')) {
+        records.push({ id: key, ...value });
+      }
+    });
+
+    // Sort by dateIssued desc
+    records.sort((a, b) => (b.dateIssued || 0) - (a.dateIssued || 0));
+
+    res.json({
+      month,
+      recordCount: records.length,
+      records
+    });
+  } catch (err) {
+    console.error('Error fetching archive:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+}));
+
+// POST /api/archive/trigger — Manual archive trigger (admin only)
+app.post('/api/archive/trigger', asyncHandler(async (req, res) => {
+  try {
+    console.log('\n🖐️ Manual archive triggered via API');
+    const result = await manualArchive();
+    res.json({
+      success: true,
+      message: `Archived ${result.archived} records to ${result.previousMonth}`,
+      ...result
+    });
+  } catch (err) {
+    console.error('Manual archive failed:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+}));
+
+// GET /api/archive/status — Check archive status
+app.get('/api/archive/status', asyncHandler(async (req, res) => {
+  const currentMonth = getCurrentMonthKey();
+  const previousMonth = getPreviousMonthKey();
+
+  const [recordsSnap, archiveSnap, keysSnap] = await Promise.all([
+    recordsRef.once('value'),
+    archivesRef.child(previousMonth).once('value'),
+    keysRef.once('value')
+  ]);
+
+  const currentRecords = recordsSnap.val() || {};
+  const previousArchive = archiveSnap.val() || {};
+  const allKeys = keysSnap.val() || {};
+
+  res.json({
+    currentMonth,
+    previousMonth,
+    currentRecordsCount: Object.keys(currentRecords).length,
+    previousArchiveCount: Object.keys(previousArchive).length,
+    totalKeysInRegistry: Object.keys(allKeys).length,
+    lastCheckedMonth,
+    archiveInProgress
+  });
 }));
 
 // POST /api/records — Issue a key
@@ -300,7 +608,8 @@ app.post('/api/records', asyncHandler(async (req, res) => {
       issueSigBy: issueSigBy || null,
       issueSigRec: issueSigRec || null,
       sigBy: null,
-      sigTo: null
+      sigTo: null,
+      month: getCurrentMonthKey() // Track which month this record belongs to
     };
 
     await newRef.set(record);
@@ -383,17 +692,28 @@ app.put('/api/records/:id/revoke', asyncHandler(async (req, res) => {
 // POST /api/export — Export CSV + optional email
 app.post('/api/export', asyncHandler(async (req, res) => {
   try {
-    const { filter, search, emailConfig } = req.body;
+    const { filter, search, emailConfig, month } = req.body;
 
-    const snap = await recordsRef.once('value');
-const rawData = snap.val();  // Returns the full object
-let records = [];
+    let sourceRef = recordsRef;
+    let sourceName = 'current';
 
-if (rawData && typeof rawData === 'object') {
-  Object.entries(rawData).forEach(([key, value]) => {  // ✅ Iterates all
-    records.push({ id: key, ...value });
-  });
-}
+    // If month specified, export from archive
+    if (month && /^\d{4}-\d{2}$/.test(month)) {
+      sourceRef = archivesRef.child(month);
+      sourceName = month;
+    }
+
+    const snap = await sourceRef.once('value');
+    const rawData = snap.val();
+    let records = [];
+
+    if (rawData && typeof rawData === 'object') {
+      Object.entries(rawData).forEach(([key, value]) => {
+        if (value && typeof value === 'object' && !key.startsWith('_')) {
+          records.push({ id: key, ...value });
+        }
+      });
+    }
 
     if (filter && filter !== 'all') {
       records = records.filter(r => r.status === filter);
@@ -416,7 +736,7 @@ if (rawData && typeof rawData === 'object') {
       dateReturned: r.dateReturned ? new Date(r.dateReturned).toISOString() : ''
     })));
 
-    const filename = `icps_export_${new Date().toISOString().slice(0,10)}_${Date.now()}.csv`;
+    const filename = `icps_export_${sourceName}_${new Date().toISOString().slice(0,10)}_${Date.now()}.csv`;
     const exportDir = path.join(__dirname, 'exports');
     const filepath = path.join(exportDir, filename);
 
@@ -438,8 +758,8 @@ if (rawData && typeof rawData === 'object') {
         await transporter.sendMail({
           from: `"ICPS Key System" <${emailConfig.smtpUser}>`,
           to: recipientList.join(', '),
-          subject: `ICPS Export — ${new Date().toLocaleDateString()}`,
-          text: `Records: ${records.length}\nFilter: ${filter || 'all'}\nSearch: ${search || 'none'}`,
+          subject: `ICPS Export — ${sourceName} — ${new Date().toLocaleDateString()}`,
+          text: `Records: ${records.length}\nFilter: ${filter || 'all'}\nSearch: ${search || 'none'}\nMonth: ${sourceName}`,
           attachments: [{ filename, path: filepath }]
         });
         emailResult = { sent: true, recipients: recipientList.length, error: null };
@@ -448,7 +768,7 @@ if (rawData && typeof rawData === 'object') {
       }
     }
 
-    res.json({ downloadUrl: `/exports/${filename}`, filename, count: records.length, email: emailResult });
+    res.json({ downloadUrl: `/exports/${filename}`, filename, count: records.length, email: emailResult, month: sourceName });
   } catch (err) {
     console.error('Error:', err.message);
     res.status(500).json({ error: err.message });
@@ -472,8 +792,111 @@ app.get('/api/health', asyncHandler(async (req, res) => {
     status: connected ? 'ok' : 'error',
     firebase: connected ? 'connected' : 'disconnected',
     project: serviceAccount.project_id,
+    currentMonth: getCurrentMonthKey(),
+    previousMonth: getPreviousMonthKey(),
     timestamp: new Date().toISOString()
   });
+}));
+
+// Simulate month endpoint — test archive without changing system date
+app.post('/api/archive/simulate', asyncHandler(async (req, res) => {
+  try {
+    const { simulateMonth } = req.body;
+    if (!simulateMonth || !/^\d{4}-\d{2}$/.test(simulateMonth)) {
+      return res.status(400).json({ error: 'simulateMonth required (YYYY-MM format)' });
+    }
+
+    console.log(`\n🧪 SIMULATION: Testing with simulated current month = ${simulateMonth}`);
+
+    // Read records
+    const recordsSnap = await recordsRef.once('value');
+    const records = recordsSnap.val() || {};
+
+    // Find records that are from a different month than simulated
+    let hasOldRecords = false;
+    let oldMonth = null;
+
+    Object.values(records).forEach(r => {
+      if (r.dateIssued) {
+        const recordMonth = getMonthFromTimestamp(r.dateIssued);
+        if (recordMonth !== simulateMonth) {
+          hasOldRecords = true;
+          oldMonth = recordMonth;
+        }
+      }
+    });
+
+    let result = null;
+    if (hasOldRecords) {
+      console.log(`   Found old records from ${oldMonth}, archiving to ${oldMonth}...`);
+      result = await performMonthlyArchive(oldMonth);
+    }
+
+    res.json({
+      simulatedCurrentMonth: simulateMonth,
+      totalRecords: Object.keys(records).length,
+      hasOldRecords: hasOldRecords,
+      oldMonth: oldMonth,
+      archiveResult: result,
+      message: result ? `Archived ${result.archived} records to ${result.archiveToMonth}` : 'No old records to archive'
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}));
+
+// Debug endpoint — shows what the archive check sees
+app.get('/api/archive/debug', asyncHandler(async (req, res) => {
+  try {
+    const currentMonth = getCurrentMonthKey();
+    const previousMonth = getPreviousMonthKey();
+
+    const recordsSnap = await recordsRef.once('value');
+    const records = recordsSnap.val() || {};
+
+    const recordList = [];
+    let hasOldRecords = false;
+
+    Object.entries(records).forEach(([key, value]) => {
+      if (value && typeof value === 'object') {
+        const issuedDate = value.dateIssued ? new Date(value.dateIssued) : null;
+        const issuedMonth = issuedDate ? 
+          `${issuedDate.getFullYear()}-${String(issuedDate.getMonth() + 1).padStart(2, '0')}` : 
+          'no-dateIssued';
+
+        const isOld = issuedMonth !== currentMonth;
+        if (isOld) hasOldRecords = true;
+
+        recordList.push({
+          id: key,
+          keyId: value.keyId,
+          status: value.status,
+          dateIssued: value.dateIssued,
+          issuedMonth: issuedMonth,
+          isOld: isOld,
+          currentMonth: currentMonth
+        });
+      }
+    });
+
+    const archivesSnap = await archivesRef.once('value');
+    const archives = archivesSnap.val() || {};
+
+    res.json({
+      serverTime: new Date().toISOString(),
+      currentMonth: currentMonth,
+      previousMonth: previousMonth,
+      lastCheckedMonth: lastCheckedMonth,
+      archiveInProgress: archiveInProgress,
+      totalRecords: Object.keys(records).length,
+      hasOldRecords: hasOldRecords,
+      records: recordList,
+      archiveMonths: Object.keys(archives).filter(k => !k.startsWith('_'))
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 }));
 
 // Error handler
@@ -488,15 +911,26 @@ app.use((err, req, res, next) => {
 async function start() {
   const connected = await testConnection();
 
- if (!connected) {
-  console.log('\n⚠️ Starting server anyway for debugging...');
-  console.log('Check http://localhost:' + PORT + '/api/health\n');
-}
+  if (!connected) {
+    console.log('\n⚠️ Starting server anyway for debugging...');
+    console.log('Check http://localhost:' + PORT + '/api/health\n');
+  }
+
+  // Run startup archive check BEFORE setting lastCheckedMonth
+  // This ensures old records get archived even if server starts in new month
+  await startupArchiveCheck();
+
+  // Initialize lastCheckedMonth on startup
+  lastCheckedMonth = getCurrentMonthKey();
+  console.log(`📅 Current month initialized: ${lastCheckedMonth}`);
+  console.log('🔄 Auto-archive enabled: Records will archive on first request of new month');
+  console.log('📦 Previous month data is preserved in /archives/YYYY-MM');
 
   app.listen(PORT, () => {
     console.log('═══════════════════════════════════════════════════════');
     console.log(`  🚀 Server running on http://localhost:${PORT}`);
     console.log(`  🔍 Health check: http://localhost:${PORT}/api/health`);
+    console.log(`  📊 Archive status: http://localhost:${PORT}/api/archive/status`);
     console.log('═══════════════════════════════════════════════════════\n');
   });
 }

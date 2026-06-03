@@ -524,6 +524,7 @@ tr:last-child td { border-bottom: none; }
 
 @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -542,7 +543,12 @@ tr:last-child td { border-bottom: none; }
       </div>
     </div>
     <div class="date-stamp" id="dateStamp" aria-label="Current date"></div>
-  </header>
+  
+    <button class="btn btn-ghost btn-sm" id="archiveToggle" style="margin-left:auto;">
+      <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor"/><path d="M7 10l5 5 5-5" stroke="currentColor"/><path d="M12 15V3" stroke="currentColor"/></svg>
+      Archives
+    </button>
+</header>
 
   <!-- Stats -->
   <div class="stats">
@@ -603,7 +609,36 @@ tr:last-child td { border-bottom: none; }
       <input id="emailRecipients" placeholder="manager@company.com, security@company.com" />
     </div>
     <button class="btn btn-ghost btn-sm" id="saveSettings">Save Settings</button>
+  
+
+  <!-- Archive Panel -->
+  <div class="panel" id="archivePanel" style="display:none;">
+    <div class="panel-header">
+      <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor"/><path d="M7 10l5 5 5-5" stroke="currentColor"/><path d="M12 15V3" stroke="currentColor"/></svg>
+      Archive Browser
+    </div>
+    <div class="panel-body">
+      <div class="form-grid-2" style="margin-bottom:12px;">
+        <div class="field">
+          <label for="archiveMonth">Select Month</label>
+          <select id="archiveMonth">
+            <option value="">Loading archives...</option>
+          </select>
+        </div>
+        <div class="field" style="display:flex; align-items:flex-end; gap:8px;">
+          <button class="btn btn-primary" id="loadArchiveBtn" style="flex:1;">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor"/><path d="M7 10l5 5 5-5" stroke="currentColor"/><path d="M12 15V3" stroke="currentColor"/></svg>
+            Load Archive
+          </button>
+          <button class="btn btn-ghost" id="backToCurrentBtn" style="flex:1;">
+            Back to Current
+          </button>
+        </div>
+      </div>
+      <div id="archiveInfo" style="font-size:0.8125rem; color:var(--text-secondary); margin-bottom:8px;"></div>
+    </div>
   </div>
+</div>
 
   <!-- Add Key Panel -->
   <div class="panel">
@@ -1648,6 +1683,187 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadKeys()
   ]);
 });
+<<<<<<< HEAD
+=======
+
+
+
+/* ── Archive Browser ─────────────────────────────────────────── */
+let isViewingArchive = false;
+let currentArchiveMonth = null;
+
+async function loadArchivesList() {
+  try {
+    const data = await apiGet('/api/archives');
+    const sel = document.getElementById('archiveMonth');
+    if (!sel) return;
+
+    if (data.archives && data.archives.length > 0) {
+      sel.innerHTML = data.archives.map(a => 
+        `<option value="${a.month}">${a.month} (${a.recordCount} records)</option>`
+      ).join('');
+    } else {
+      sel.innerHTML = '<option value="">No archives available</option>';
+    }
+  } catch (err) {
+    console.error('Failed to load archives list:', err);
+  }
+}
+
+async function loadArchiveMonth(month) {
+  if (!month) return;
+
+  try {
+    const data = await apiGet(`/api/archives/${month}`);
+
+    // Replace records with archive data
+    records = data.records || [];
+    isViewingArchive = true;
+    currentArchiveMonth = month;
+
+    // Update UI
+    document.getElementById('archiveInfo').innerHTML = 
+      `Viewing <strong>${month}</strong> archive — ${data.recordCount} records (read-only)`;
+
+    // Disable action buttons in archive mode
+    render();
+
+    // Hide issue panel, show archive info
+    document.querySelector('.panel:has(#issueBtn)').style.opacity = '0.5';
+    document.querySelector('.panel:has(#issueBtn)').style.pointerEvents = 'none';
+
+    toast(`Loaded archive for ${month}`);
+  } catch (err) {
+    toast('Failed to load archive', 'error');
+  }
+}
+
+async function returnToCurrent() {
+  isViewingArchive = false;
+  currentArchiveMonth = null;
+  document.getElementById('archiveInfo').textContent = '';
+  document.querySelector('.panel:has(#issueBtn)').style.opacity = '1';
+  document.querySelector('.panel:has(#issueBtn)').style.pointerEvents = 'auto';
+  await loadRecords();
+  toast('Returned to current month records');
+}
+
+document.getElementById('archiveToggle').addEventListener('click', () => {
+  const panel = document.getElementById('archivePanel');
+  const isVisible = panel.style.display !== 'none';
+  panel.style.display = isVisible ? 'none' : 'block';
+  if (!isVisible) loadArchivesList();
+});
+
+document.getElementById('loadArchiveBtn').addEventListener('click', () => {
+  const month = document.getElementById('archiveMonth').value;
+  if (month) loadArchiveMonth(month);
+});
+
+document.getElementById('backToCurrentBtn').addEventListener('click', returnToCurrent);
+
+// Modify render to handle archive mode (disable actions)
+const originalRender = render;
+render = function() {
+  stats(); populateSel();
+  const data = filtered();
+  const tb = document.getElementById('tBody');
+  const em = document.getElementById('emptyMsg');
+  document.getElementById('recCount').textContent = `${data.length} record${data.length === 1 ? '' : 's'}`;
+
+  if (!data.length) {
+    tb.innerHTML = '';
+    em.style.display = 'block';
+    return;
+  }
+  em.style.display = 'none';
+
+  tb.innerHTML = data.map(r => {
+    const i = records.indexOf(r);
+    const bc = r.status === 'Issued' ? 'b-issued' : r.status === 'Available' ? 'b-available' : 'b-revoked';
+    const dc = r.status === 'Issued' ? 'dot-issued' : r.status === 'Available' ? 'dot-available' : 'dot-revoked';
+
+    // In archive mode, disable actions
+    let acts = '';
+    if (!isViewingArchive) {
+      if (r.status === 'Issued') {
+        acts += `<button class="act ret" data-action="return" data-idx="${i}">${ICONS.return} Return</button>`;
+      }
+      if (r.status !== 'Revoked') {
+        acts += `<button class="act rev" data-action="revoke" data-idx="${i}">${ICONS.revoke} Revoke</button>`;
+      }
+    } else {
+      acts = '<span style="color:var(--text-tertiary);font-size:0.75rem;">Archived</span>';
+    }
+
+    const retBy = r.returnedBy || '—';
+    const retTo = r.returnedTo || '—';
+    const hasSig = r.sigBy || r.sigTo ? ' ✓' : '';
+    const sigTitle = [];
+    if (r.sigBy) sigTitle.push('Returned by: signed');
+    if (r.sigTo) sigTitle.push('Returned to: signed');
+    const titleAttr = sigTitle.length ? sigTitle.join(' | ') : '';
+
+    return `<tr>
+      <td><span class="key-pill">${ICONS.key}${escapeHtml(r.keyId)}</span></td>
+      <td><span class="dept-pill">${escapeHtml(r.department || '—')}</span></td>
+      <td title="${escapeHtml(r.issuedBy)}">${escapeHtml(r.issuedBy)}</td>
+      <td title="${escapeHtml(r.recipient)}">${escapeHtml(r.recipient)}</td>
+      <td title="${escapeHtml(r.purpose)}">${escapeHtml(r.purpose)}</td>
+      <td style="color:var(--text-secondary)">${fmt(r.dateIssued)}</td>
+      <td style="color:var(--text-secondary)">${fmt(r.dateReturned)}</td>
+      <td title="${escapeHtml(titleAttr)}">${escapeHtml(retBy)}${hasSig}</td>
+      <td>${escapeHtml(retTo)}</td>
+      <td><span class="badge ${bc}"><span class="dot ${dc}"></span>${r.status}</span></td>
+      <td>${acts}</td>
+    </tr>`;
+  }).join('');
+};
+
+// Modify CSV export to support archives
+document.getElementById('csvBtn').addEventListener('click', async () => {
+  const smtpHost = document.getElementById('smtpHost').value.trim();
+  const smtpPort = document.getElementById('smtpPort').value.trim();
+  const smtpUser = document.getElementById('smtpUser').value.trim();
+  const smtpPass = document.getElementById('smtpPass').value;
+  const recipients = document.getElementById('emailRecipients').value.trim();
+
+  const emailConfig = (smtpHost && smtpUser && smtpPass && recipients) ? {
+    smtpHost,
+    smtpPort: smtpPort || 465,
+    smtpUser,
+    smtpPass,
+    recipients
+  } : null;
+
+  try {
+    const result = await apiPost('/api/export', {
+      filter: filter === 'all' ? null : filter,
+      search: search || null,
+      emailConfig,
+      month: isViewingArchive ? currentArchiveMonth : null
+    });
+
+    // Download the file
+    const a = document.createElement('a');
+    a.href = `${API_BASE}${result.downloadUrl}`;
+    a.download = result.filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    if (result.email.sent) {
+      toast(`CSV exported & emailed to ${result.email.recipients || 0} recipient(s)`);
+    } else if (result.email.error) {
+      toast(`CSV downloaded. Email failed: ${result.email.error}`, 'error');
+    } else {
+      toast('CSV exported. Configure email settings to send automatically.');
+    }
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+});
+>>>>>>> 652d6c604d7277e02fc3d6b7c226645022fbce40
 </script>
 </body>
 </html>
