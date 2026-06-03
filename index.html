@@ -165,7 +165,6 @@ body {
 }
 
 /* ── Signature Pad (Unified) ───────────────────────────── */
-
 .sig-wrap {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -173,16 +172,13 @@ body {
   overflow: hidden;
   position: relative;
   transition: var(--transition);
-
-  width: 320px;        /* fixed width */
-  height: 120px;       /* fixed height */
+  width: 320px;
+  height: 120px;
 }
-
 .sig-wrap.missing {
   border-color: var(--danger);
   box-shadow: 0 0 0 3px var(--danger-bg);
 }
-
 .sig-wrap canvas {
   width: 100%;
   height: 100%;
@@ -190,7 +186,6 @@ body {
   cursor: crosshair;
   touch-action: none;
 }
-
 .sig-clear {
   position: absolute;
   top: 6px;
@@ -206,12 +201,12 @@ body {
   font-family: inherit;
   transition: var(--transition);
 }
-
 .sig-clear:hover {
   color: var(--danger);
   border-color: var(--danger);
   background: var(--danger-bg);
 }
+
 /* ── Buttons ─────────────────────────────────────────────────── */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -225,19 +220,13 @@ body {
 }
 .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(30,58,95,0.25); }
 .btn-primary:active { transform: translateY(0); }
-.btn-primary:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
+.btn-primary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .btn-ghost {
   background: transparent; color: var(--text-secondary);
   border: 1px solid var(--border);
 }
 .btn-ghost:hover { background: var(--bg-hover); border-color: var(--text-tertiary); }
-.btn-ghost:focus-visible {
-  outline: 2px solid var(--text-secondary);
-  outline-offset: 2px;
-}
+.btn-ghost:focus-visible { outline: 2px solid var(--text-secondary); outline-offset: 2px; }
 .btn-sm { padding: 6px 12px; font-size: 0.75rem; }
 
 /* ── Toolbar ─────────────────────────────────────────────────── */
@@ -401,6 +390,92 @@ tr:last-child td { border-bottom: none; }
 .modal-body { padding: 1.25rem 1.5rem; font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; }
 .modal-footer { padding: 1rem 1.5rem; border-top: 1px solid var(--border-light); display: flex; justify-content: flex-end; gap: 8px; }
 
+/* ── Admin Auth Modal ────────────────────────────────────────── */
+.admin-modal .modal-header {
+  background: var(--accent);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.admin-modal .modal-title {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.admin-modal .modal-sub {
+  color: rgba(255,255,255,0.65);
+  font-size: 0.75rem;
+  margin-top: 2px;
+}
+.admin-lock-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  background: rgba(255,255,255,0.15);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.admin-error {
+  display: none;
+  background: var(--danger-bg);
+  border: 1px solid #FECACA;
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 0.8125rem;
+  color: var(--danger);
+  font-weight: 500;
+  margin-top: 4px;
+  align-items: center;
+  gap: 8px;
+}
+.admin-error.show {
+  display: flex;
+}
+.admin-attempts {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  text-align: right;
+  margin-top: 6px;
+}
+.shake {
+  animation: shake 0.4s cubic-bezier(.36,.07,.19,.97);
+}
+@keyframes shake {
+  10%, 90%  { transform: translateX(-2px); }
+  20%, 80%  { transform: translateX(4px); }
+  30%, 50%, 70% { transform: translateX(-6px); }
+  40%, 60%  { transform: translateX(6px); }
+}
+.input-password-wrap {
+  position: relative;
+}
+.input-password-wrap input {
+  width: 100%;
+  padding-right: 40px !important;
+}
+.toggle-pw {
+  position: absolute;
+  right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer;
+  color: var(--text-tertiary); padding: 0;
+  display: flex; align-items: center;
+  transition: var(--transition);
+}
+.toggle-pw:hover { color: var(--text-secondary); }
+
+/* ── Session badge on Add Key panel ─────────────────────────── */
+.admin-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--success-bg); color: var(--success);
+  border: 1px solid #A7F3D0;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 0.6875rem; font-weight: 700;
+  margin-left: auto;
+}
+.admin-badge-locked {
+  background: var(--bg-hover); color: var(--text-tertiary);
+  border-color: var(--border);
+}
+
 /* ── Email Settings Panel ────────────────────────────────────── */
 .settings-toggle {
   display: flex; align-items: center; gap: 6px;
@@ -530,42 +605,39 @@ tr:last-child td { border-bottom: none; }
     <button class="btn btn-ghost btn-sm" id="saveSettings">Save Settings</button>
   </div>
 
-  <!-- Issue Panel -->
-   <!-- Add Key Panel -->
-<div class="panel">
-
-  <div class="panel-header">
-    Add New Key
-  </div>
-
-  <div class="panel-body">
-
-    <div class="form-grid-3">
-
-      <div class="field">
-        <label>Key ID</label>
-        <input id="newKeyId" placeholder="KEY-001">
-      </div>
-
-      <div class="field">
-        <label>Label</label>
-        <input id="newKeyLabel" placeholder="Main Office Key">
-      </div>
-
-      <div class="field">
-        <label>Location</label>
-        <input id="newKeyLocation" placeholder="Security Room">
-      </div>
-
+  <!-- Add Key Panel -->
+  <div class="panel">
+    <div class="panel-header">
+      <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="currentColor"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor"/></svg>
+      Add New Key
+      <span class="admin-badge admin-badge-locked" id="adminSessionBadge">
+        <svg class="icon" style="width:10px;height:10px;" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="currentColor"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor"/></svg>
+        Admin required
+      </span>
     </div>
-
-    <button class="btn btn-primary" id="addKeyBtn">
-      Add Key
-    </button>
-
+    <div class="panel-body">
+      <div class="form-grid-3">
+        <div class="field">
+          <label>Key ID</label>
+          <input id="newKeyId" placeholder="KEY-001">
+        </div>
+        <div class="field">
+          <label>Label</label>
+          <input id="newKeyLabel" placeholder="Main Office Key">
+        </div>
+        <div class="field">
+          <label>Location</label>
+          <input id="newKeyLocation" placeholder="Security Room">
+        </div>
+      </div>
+      <button class="btn btn-primary" id="addKeyBtn">
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="currentColor"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor"/><path d="M12 16v-2m0 0v-2m0 2h2m-2 0h-2" stroke="currentColor"/></svg>
+        Add Key
+      </button>
+    </div>
   </div>
 
-</div>
+  <!-- Issue Panel -->
   <div class="panel">
     <div class="panel-header">
       <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8m-4-4h8" stroke="currentColor"/></svg>
@@ -581,7 +653,7 @@ tr:last-child td { border-bottom: none; }
           <label for="fDept">Department<span class="req">*</span></label>
           <select id="fDept">
             <option value="">Select department…</option>
-            <option value="Offset">Offset</option>            
+            <option value="Offset">Offset</option>
             <option value="Flexo">Flexo</option>
             <option value="Silkscreen">Silkscreen</option>
             <option value="Lamination">Lamination</option>
@@ -692,6 +764,51 @@ tr:last-child td { border-bottom: none; }
 <!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
 
+<!-- Admin Auth Modal -->
+<div class="modal-overlay" id="adminAuthModal" role="dialog" aria-modal="true" aria-labelledby="adminAuthTitle">
+  <div class="modal admin-modal" id="adminAuthModalInner">
+    <div class="modal-header">
+      <div class="admin-lock-icon" aria-hidden="true">
+        <svg style="width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <div>
+        <div class="modal-title" id="adminAuthTitle">Administrator Login</div>
+        <div class="admin-modal-sub" style="color:rgba(255,255,255,0.65);font-size:0.75rem;margin-top:2px;">Required to add/revoke keys to/from the registry</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="field" style="margin-bottom:12px;">
+        <label for="adminUsername">Username<span class="req">*</span></label>
+        <input id="adminUsername" placeholder="Enter admin username" autocomplete="username" />
+      </div>
+      <div class="field" style="margin-bottom:4px;">
+        <label for="adminPassword">Password<span class="req">*</span></label>
+        <div class="input-password-wrap">
+          <input id="adminPassword" type="password" placeholder="Enter admin password" autocomplete="current-password" />
+          <button type="button" class="toggle-pw" id="toggleAdminPw" aria-label="Toggle password visibility">
+            <svg id="eyeIcon" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;" viewBox="0 0 24 24">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="admin-error" id="adminError" role="alert">
+        <svg style="width:14px;height:14px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+        <span id="adminErrorMsg">Invalid username or password.</span>
+      </div>
+      <div class="admin-attempts" id="adminAttemptsMsg" style="display:none;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost btn-sm" id="adminAuthCancel">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="adminAuthConfirm">
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="currentColor"/></svg>
+        Sign in
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Confirm Modal (Revoke) -->
 <div class="modal-overlay" id="confirmModal">
   <div class="modal">
@@ -751,7 +868,152 @@ tr:last-child td { border-bottom: none; }
 
 <script>
 /* ── API Base URL ────────────────────────────────────────────── */
-const API_BASE = ''; // Relative to current origin (works with subpaths)
+const API_BASE = '';
+
+/* ── Admin Auth State ────────────────────────────────────────── */
+const ADMIN_SESSION_KEY = 'icps_admin_session';
+const ADMIN_SESSION_DURATION_MS = 30 * 60 * 1000; // 30 minutes
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 5 * 60 * 1000; // 5 minutes lockout after max attempts
+
+// ⚠️  Change these credentials — ideally verify server-side.
+const ADMIN_CREDENTIALS = { username: 'admin', password: 'icps2024' };
+
+let adminAttempts = 0;
+let adminLockedUntil = 0;
+let adminSessionExpiry = 0;
+let pendingAddKeyAction = null; // stores form data to execute after auth
+
+function isAdminSessionActive() {
+  return Date.now() < adminSessionExpiry;
+}
+
+function setAdminSession() {
+  adminSessionExpiry = Date.now() + ADMIN_SESSION_DURATION_MS;
+  adminAttempts = 0;
+  updateAdminBadge();
+}
+
+function clearAdminSession() {
+  adminSessionExpiry = 0;
+  updateAdminBadge();
+}
+
+function updateAdminBadge() {
+  const badge = document.getElementById('adminSessionBadge');
+  if (!badge) return;
+  if (isAdminSessionActive()) {
+    badge.className = 'admin-badge';
+    badge.innerHTML = `<svg class="icon" style="width:10px;height:10px;" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor"/><path d="M22 4 12 14.01l-3-3" stroke="currentColor"/></svg> Admin active`;
+  } else {
+    badge.className = 'admin-badge admin-badge-locked';
+    badge.innerHTML = `<svg class="icon" style="width:10px;height:10px;" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="currentColor"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor"/></svg> Admin required`;
+  }
+}
+
+/* ── Admin Auth Modal Logic ──────────────────────────────────── */
+function openAdminAuthModal(onSuccess) {
+  pendingAddKeyAction = onSuccess;
+  adminAttempts = 0;
+  document.getElementById('adminUsername').value = '';
+  document.getElementById('adminPassword').value = '';
+  document.getElementById('adminError').classList.remove('show');
+  document.getElementById('adminAttemptsMsg').style.display = 'none';
+  document.getElementById('adminAuthModal').classList.add('show');
+  setTimeout(() => document.getElementById('adminUsername').focus(), 120);
+}
+
+function closeAdminAuthModal() {
+  document.getElementById('adminAuthModal').classList.remove('show');
+  pendingAddKeyAction = null;
+  document.getElementById('adminError').classList.remove('show');
+  document.getElementById('adminAttemptsMsg').style.display = 'none';
+}
+
+function showAdminError(msg) {
+  const errEl = document.getElementById('adminError');
+  document.getElementById('adminErrorMsg').textContent = msg;
+  errEl.classList.add('show');
+  // Shake the modal
+  const modal = document.getElementById('adminAuthModalInner');
+  modal.classList.remove('shake');
+  void modal.offsetWidth; // reflow to restart animation
+  modal.classList.add('shake');
+  setTimeout(() => modal.classList.remove('shake'), 500);
+}
+
+function attemptAdminLogin() {
+  const now = Date.now();
+
+  // Lockout check
+  if (adminLockedUntil > now) {
+    const remaining = Math.ceil((adminLockedUntil - now) / 1000 / 60);
+    showAdminError(`Too many failed attempts. Try again in ${remaining} minute${remaining !== 1 ? 's' : ''}.`);
+    return;
+  }
+
+  const username = document.getElementById('adminUsername').value.trim();
+  const password = document.getElementById('adminPassword').value;
+
+  if (!username || !password) {
+    showAdminError('Please enter both username and password.');
+    return;
+  }
+
+  if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+    // Success
+    setAdminSession();
+    closeAdminAuthModal();
+    toast('Admin session started (30 min)', 'success');
+    if (typeof pendingAddKeyAction === 'function') {
+      pendingAddKeyAction();
+      pendingAddKeyAction = null;
+    }
+  } else {
+    adminAttempts++;
+    const remaining = MAX_ATTEMPTS - adminAttempts;
+
+    if (adminAttempts >= MAX_ATTEMPTS) {
+      adminLockedUntil = now + LOCKOUT_DURATION_MS;
+      adminAttempts = 0;
+      showAdminError('Too many failed attempts. Account locked for 5 minutes.');
+      document.getElementById('adminAttemptsMsg').style.display = 'none';
+    } else {
+      showAdminError('Invalid username or password.');
+      const attemptsEl = document.getElementById('adminAttemptsMsg');
+      attemptsEl.style.display = 'block';
+      attemptsEl.textContent = `${remaining} attempt${remaining !== 1 ? 's' : ''} remaining before lockout.`;
+    }
+  }
+}
+
+// Event listeners for admin modal
+document.getElementById('adminAuthConfirm').addEventListener('click', attemptAdminLogin);
+document.getElementById('adminAuthCancel').addEventListener('click', closeAdminAuthModal);
+
+document.getElementById('adminAuthModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeAdminAuthModal();
+});
+
+document.getElementById('adminPassword').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') attemptAdminLogin();
+});
+document.getElementById('adminUsername').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('adminPassword').focus();
+});
+
+// Toggle password visibility
+document.getElementById('toggleAdminPw').addEventListener('click', () => {
+  const input = document.getElementById('adminPassword');
+  const icon = document.getElementById('eyeIcon');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  } else {
+    input.type = 'password';
+    icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  }
+});
 
 /* ── State ───────────────────────────────────────────────────── */
 let records = [];
@@ -817,8 +1079,6 @@ function initSigPad(canvasId, clearBtnId) {
   canvas.addEventListener('touchmove', move, { passive: false });
   canvas.addEventListener('touchend', end);
 
-
-
   document.getElementById(clearBtnId).addEventListener('click', () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     canvas.parentElement.classList.remove('missing');
@@ -867,7 +1127,7 @@ function flashMissing(wrapId) {
   setTimeout(() => el.classList.remove('missing'), 2000);
 }
 
-/* ── Icons (inline SVG strings) ──────────────────────────────── */
+/* ── Icons ───────────────────────────────────────────────────── */
 const ICONS = {
   key: '<svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" stroke="currentColor"/></svg>',
   return: '<svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5" stroke="currentColor"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11" stroke="currentColor"/></svg>',
@@ -1034,21 +1294,13 @@ document.getElementById('returnModal').addEventListener('click', (e) => {
 let allKeys = [];
 
 function stats() {
-
   const totalKeys = allKeys.length;
-
   const issued = records.filter(r => r.status === 'Issued');
-
   const revoked = records.filter(r => r.status === 'Revoked');
-
   const available = totalKeys - issued.length - revoked.length;
-
   document.getElementById('sTotal').textContent = totalKeys;
-
   document.getElementById('sAvail').textContent = available;
-
   document.getElementById('sIssued').textContent = issued.length;
-
   document.getElementById('sRevoked').textContent = revoked.length;
 }
 
@@ -1135,21 +1387,16 @@ async function loadRecords() {
     toast('Failed to load records from database', 'error');
   }
 }
+
 async function loadKeys() {
-
   try {
-
     allKeys = await apiGet('/api/keys');
-
     stats();
-
   } catch (err) {
-
     toast('Failed to load keys', 'error');
-
   }
-
 }
+
 /* ── Actions ─────────────────────────────────────────────────── */
 function doReturn(i) {
   if (!records[i]) return;
@@ -1159,19 +1406,28 @@ function doReturn(i) {
 async function doRevoke(i) {
   const r = records[i];
   if (!r) return;
-  confirmAction(
-    'Revoke Key',
-    `Are you sure you want to revoke ${r.keyId}? It was issued to ${r.recipient} in ${r.department || 'Unknown Department'}. This action cannot be undone.`,
-    async () => {
-      try {
-        await apiPut(`/api/records/${r.id}/revoke`, {});
-        await loadRecords();
-        toast(`${r.keyId} has been revoked`);
-      } catch (err) {
-        toast(err.message, 'error');
+
+  function proceedWithRevoke() {
+    confirmAction(
+      'Revoke Key',
+      `Are you sure you want to revoke ${r.keyId}? It was issued to ${r.recipient} in ${r.department || 'Unknown Department'}. This action cannot be undone.`,
+      async () => {
+        try {
+          await apiPut(`/api/records/${r.id}/revoke`, {});
+          await loadRecords();
+          toast(`${r.keyId} has been revoked`);
+        } catch (err) {
+          toast(err.message, 'error');
+        }
       }
-    }
-  );
+    );
+  }
+
+  if (isAdminSessionActive()) {
+    proceedWithRevoke();
+  } else {
+    openAdminAuthModal(() => proceedWithRevoke());
+  }
 }
 
 /* ── Event Delegation for Table Actions ──────────────────────── */
@@ -1224,48 +1480,45 @@ document.getElementById('issueBtn').addEventListener('click', async () => {
     toast(err.message, 'error');
   }
 });
-/* add a key */
-document.getElementById('addKeyBtn').addEventListener('click', async () => {
 
+/* ── Add Key (with Admin Auth Gate) ─────────────────────────── */
+async function executeAddKey() {
   const keyId = document.getElementById('newKeyId').value.trim();
-
   const label = document.getElementById('newKeyLabel').value.trim();
-
   const location = document.getElementById('newKeyLocation').value.trim();
 
   if (!keyId) {
-
     toast('Key ID required', 'error');
-
     return;
   }
 
   try {
-
-    await apiPost('/api/keys', {
-      keyId,
-      label,
-      location
-    });
-
+    await apiPost('/api/keys', { keyId, label, location });
     document.getElementById('newKeyId').value = '';
-
     document.getElementById('newKeyLabel').value = '';
-
     document.getElementById('newKeyLocation').value = '';
-
     await loadKeys();
-
     await populateSel();
-
     toast(`${keyId} added successfully`);
-
   } catch (err) {
-
     toast(err.message, 'error');
+  }
+}
 
+document.getElementById('addKeyBtn').addEventListener('click', () => {
+  const keyId = document.getElementById('newKeyId').value.trim();
+  if (!keyId) {
+    toast('Key ID required', 'error');
+    return;
   }
 
+  if (isAdminSessionActive()) {
+    // Already authenticated — proceed directly
+    executeAddKey();
+  } else {
+    // Prompt for admin credentials first
+    openAdminAuthModal(() => executeAddKey());
+  }
 });
 
 /* ── Search ──────────────────────────────────────────────────── */
@@ -1307,7 +1560,6 @@ document.getElementById('csvBtn').addEventListener('click', async () => {
       emailConfig
     });
 
-    // Download the file
     const a = document.createElement('a');
     a.href = `${API_BASE}${result.downloadUrl}`;
     a.download = result.filename;
@@ -1370,8 +1622,10 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     document.getElementById('confirmModal').classList.remove('show');
     document.getElementById('returnModal').classList.remove('show');
+    document.getElementById('adminAuthModal').classList.remove('show');
     confirmCallback = null;
     returnTargetIdx = null;
+    pendingAddKeyAction = null;
   }
   if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'SELECT' && document.activeElement.tagName !== 'TEXTAREA') {
     e.preventDefault();
@@ -1381,21 +1635,19 @@ document.addEventListener('keydown', (e) => {
 
 /* ── Boot ────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
-
   initSigPad('issueSigByCanvas', 'issueSigByClear');
   initSigPad('issueSigRecCanvas', 'issueSigRecClear');
   initSigPad('sigByCanvas', 'sigByClear');
   initSigPad('sigToCanvas', 'sigToClear');
 
+  updateAdminBadge();
   loadSettings();
 
   await Promise.all([
     loadRecords(),
     loadKeys()
   ]);
-
 });
-
 </script>
 </body>
 </html>
