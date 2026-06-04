@@ -166,7 +166,7 @@ tr:last-child td { border-bottom:none; }
       </div>
       <div>
         <div class="header-title">Key Issuance System</div>
-        <div class="header-sub">ICPS — physical access management</div>
+        <div class="header-sub">ICPS — Key access management</div>
       </div>
     </div>
     <div class="date-stamp" id="dateStamp" aria-label="Current date"></div>
@@ -312,6 +312,84 @@ tr:last-child td { border-bottom:none; }
 
 <script>
 const API_BASE = '';
+
+/* ── User Session & RBAC ─────────────────────────────────────── */
+const USER_SESSION_KEY = 'icps_user_session';
+
+function getSession() {
+  try {
+    const s = JSON.parse(sessionStorage.getItem(USER_SESSION_KEY));
+    if (s && s.expiry > Date.now()) return s;
+  } catch(e) {}
+  return null;
+}
+
+// Redirect to login if no session
+const _session = getSession();
+if (!_session) {
+  window.location.replace('login.html');
+  throw new Error('No session');
+}
+
+const CURRENT_USER = _session;
+const IS_ADMIN = CURRENT_USER.role === 'admin';
+// Security can: issue key, view dashboard (stats), view issued keys table (no export)
+// Admin: full access
+
+function applyRBAC() {
+  // --- Header: show logged-in user + logout ---
+  const headerEl = document.querySelector('.header');
+  if (headerEl) {
+    const userBar = document.createElement('div');
+    userBar.id = 'userBar';
+    userBar.style.cssText = 'display:flex;align-items:center;gap:10px;margin-left:12px;';
+    userBar.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;background:rgba(30,58,95,0.15);border:1px solid rgba(30,58,95,0.2);border-radius:20px;padding:5px 12px 5px 8px;">
+        <div style="width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg style="width:13px;height:13px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#fff"/><path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="#fff"/></svg>
+        </div>
+        <div>
+          <div style="font-size:0.75rem;font-weight:700;color:var(--text-primary);line-height:1.1;">${escapeHtml(CURRENT_USER.name)}</div>
+          <div style="font-size:0.625rem;color:var(--text-tertiary);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">${IS_ADMIN ? 'Administrator' : 'Security Personnel'}</div>
+        </div>
+      </div>
+      <button onclick="logoutUser()" style="display:flex;align-items:center;gap:5px;padding:6px 11px;font-size:0.75rem;font-weight:600;border:1px solid var(--border);border-radius:var(--radius-md);background:transparent;color:var(--text-secondary);cursor:pointer;font-family:inherit;transition:var(--transition);" onmouseover="this.style.background='var(--danger-bg)';this.style.color='var(--danger)';this.style.borderColor='#FECACA'" onmouseout="this.style.background='transparent';this.style.color='var(--text-secondary)';this.style.borderColor='var(--border)'">
+        <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        Sign out
+      </button>`;
+    headerEl.appendChild(userBar);
+  }
+
+  if (!IS_ADMIN) {
+    // Hide: Add New Key panel
+    const addKeyPanel = document.getElementById('addKeyPanel');
+    if (addKeyPanel) addKeyPanel.style.display = 'none';
+
+    // Hide: Settings toggle
+    const settingsToggle = document.getElementById('settingsToggle');
+    if (settingsToggle) settingsToggle.style.display = 'none';
+    const settingsPanel = document.getElementById('settingsPanel');
+    if (settingsPanel) settingsPanel.style.display = 'none';
+
+    // Hide: Archive toggle button
+    const archiveToggle = document.getElementById('archiveToggle');
+    if (archiveToggle) archiveToggle.style.display = 'none';
+    const archivePanel = document.getElementById('archivePanel');
+    if (archivePanel) archivePanel.style.display = 'none';
+
+    // Hide: Export CSV button
+    const csvBtn = document.getElementById('csvBtn');
+    if (csvBtn) csvBtn.style.display = 'none';
+
+    // Hide: Action buttons (Return/Revoke) in table — handled via render overrides below
+  }
+}
+
+function logoutUser() {
+  try { sessionStorage.removeItem(USER_SESSION_KEY); } catch(e) {}
+  try { sessionStorage.removeItem('icps_admin_session'); } catch(e) {}
+  window.location.replace('login.html');
+}
 
 /* ── Admin Auth State ────────────────────────────────────────── */
 const ADMIN_SESSION_KEY = 'icps_admin_session';
@@ -850,11 +928,16 @@ function render(options) {
     const dc = r.status === 'Issued' ? 'dot-issued' : r.status === 'Available' ? 'dot-available' : 'dot-revoked';
     let acts = '';
     if (!isArchive) {
-      if (r.status === 'Issued') {
-        acts += '<button class="act ret" data-action="return" data-idx="' + i + '">' + ICONS.return + ' Return</button>';
-      }
-      if (r.status !== 'Revoked') {
-        acts += '<button class="act rev" data-action="revoke" data-idx="' + i + '">' + ICONS.revoke + ' Revoke</button>';
+      if (IS_ADMIN) {
+        if (r.status === 'Issued') {
+          acts += '<button class="act ret" data-action="return" data-idx="' + i + '">' + ICONS.return + ' Return</button>';
+        }
+        if (r.status !== 'Revoked') {
+          acts += '<button class="act rev" data-action="revoke" data-idx="' + i + '">' + ICONS.revoke + ' Revoke</button>';
+        }
+      } else {
+        // Security personnel: view only, no actions
+        acts = '<span style="color:var(--text-tertiary);font-size:0.75rem;">View only</span>';
       }
     } else {
       acts = '<span style="color:var(--text-tertiary);font-size:0.75rem;">Archived</span>';
@@ -1180,6 +1263,7 @@ document.getElementById('backToCurrentBtn').addEventListener('click', returnToCu
 
 /* ── Boot ────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
+  applyRBAC();
   initSigPad('issueSigByCanvas', 'issueSigByClear');
   initSigPad('issueSigRecCanvas', 'issueSigRecClear');
   initSigPad('sigByCanvas', 'sigByClear');

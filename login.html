@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICPS — Sign In</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy: #0D1B2A;
+  --navy-mid: #132235;
+  --navy-light: #1E3A5F;
+  --blue: #2563EB;
+  --blue-glow: rgba(37,99,235,0.35);
+  --blue-soft: rgba(37,99,235,0.12);
+  --gold: #F59E0B;
+  --gold-soft: rgba(245,158,11,0.15);
+  --white: #F8FAFC;
+  --white-60: rgba(248,250,252,0.6);
+  --white-30: rgba(248,250,252,0.3);
+  --white-10: rgba(248,250,252,0.08);
+  --danger: #EF4444;
+  --danger-soft: rgba(239,68,68,0.12);
+  --border: rgba(248,250,252,0.1);
+  --border-focus: rgba(37,99,235,0.6);
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+  --radius: 12px;
+  --radius-lg: 18px;
+  --transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+html { height:100%; -webkit-font-smoothing:antialiased; }
+
+body {
+  font-family: var(--font);
+  background: var(--navy);
+  color: var(--white);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Background grid + glow */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(37,99,235,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(37,99,235,0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+body::after {
+  content: '';
+  position: fixed;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(37,99,235,0.18) 0%, transparent 70%);
+  top: -100px; left: -100px;
+  pointer-events: none;
+  z-index: 0;
+}
+.glow-br {
+  position: fixed;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245,158,11,0.08) 0%, transparent 70%);
+  bottom: -100px; right: -100px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Card */
+.card {
+  position: relative;
+  z-index: 1;
+  width: 440px;
+  max-width: calc(100vw - 2rem);
+  background: var(--navy-mid);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.45), 0 0 0 1px rgba(37,99,235,0.08);
+  padding: 2.5rem;
+  animation: slideUp 0.5s cubic-bezier(0.16,1,0.3,1) both;
+}
+@keyframes slideUp {
+  from { opacity:0; transform:translateY(24px) scale(0.97); }
+  to   { opacity:1; transform:translateY(0) scale(1); }
+}
+
+/* Logo */
+.logo-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 2rem;
+}
+.logo-icon {
+  width: 48px; height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--blue) 0%, #1D4ED8 100%);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px var(--blue-glow);
+  flex-shrink: 0;
+}
+.logo-icon svg { width:22px; height:22px; stroke:#fff; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.logo-text { }
+.logo-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.logo-sub {
+  font-size: 0.75rem;
+  color: var(--white-60);
+  font-weight: 400;
+  margin-top: 2px;
+  font-family: var(--mono);
+  letter-spacing: 0.03em;
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin-bottom: 1.75rem;
+}
+
+/* Heading */
+.signin-heading {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.4rem;
+}
+.signin-sub {
+  font-size: 0.875rem;
+  color: var(--white-60);
+  margin-bottom: 1.75rem;
+  font-weight: 400;
+}
+
+/* Fields */
+.field { margin-bottom: 1.1rem; }
+.field label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--white-60);
+  margin-bottom: 7px;
+}
+.input-wrap { position: relative; }
+.input-wrap .field-icon {
+  position: absolute;
+  left: 13px; top: 50%;
+  transform: translateY(-50%);
+  width: 16px; height: 16px;
+  stroke: rgba(248,250,252,0.35);
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+  transition: var(--transition);
+}
+.field input {
+  width: 100%;
+  background: var(--white-10);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--white);
+  font-family: var(--font);
+  font-size: 0.9375rem;
+  font-weight: 400;
+  padding: 11px 12px 11px 40px;
+  outline: none;
+  transition: var(--transition);
+  -webkit-appearance: none;
+}
+.field input::placeholder { color: rgba(248,250,252,0.25); }
+.field input:focus {
+  border-color: var(--border-focus);
+  background: rgba(37,99,235,0.08);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.18);
+}
+.field input:focus + .field-icon,
+.input-wrap:focus-within .field-icon {
+  stroke: rgba(37,99,235,0.8);
+}
+/* password toggle */
+.input-wrap .pw-toggle {
+  position: absolute;
+  right: 12px; top: 50%;
+  transform: translateY(-50%);
+  background: none; border: none; cursor: pointer;
+  color: rgba(248,250,252,0.35);
+  display: flex; align-items: center;
+  padding: 0; transition: var(--transition);
+}
+.input-wrap .pw-toggle:hover { color: var(--white-60); }
+
+/* Role selector */
+.role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+}
+.role-card {
+  position: relative;
+  cursor: pointer;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  padding: 14px 14px 12px;
+  transition: var(--transition);
+  background: var(--white-10);
+  user-select: none;
+}
+.role-card:hover { border-color: rgba(37,99,235,0.4); background: var(--blue-soft); }
+.role-card.selected {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+}
+.role-card input[type=radio] { position:absolute; opacity:0; width:0; height:0; }
+.role-icon {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 10px;
+  transition: var(--transition);
+}
+.role-icon svg { width:16px; height:16px; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.role-card:not(.selected) .role-icon { background: rgba(248,250,252,0.08); }
+.role-card:not(.selected) .role-icon svg { stroke: var(--white-60); }
+.role-card.selected .role-icon { background: var(--blue); box-shadow: 0 2px 8px var(--blue-glow); }
+.role-card.selected .role-icon svg { stroke: #fff; }
+.role-name { font-size: 0.8125rem; font-weight: 700; color: var(--white); margin-bottom: 2px; letter-spacing: -0.01em; }
+.role-desc { font-size: 0.6875rem; color: var(--white-60); line-height: 1.4; }
+.role-check {
+  position: absolute; top: 10px; right: 10px;
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 1.5px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  transition: var(--transition);
+}
+.role-card.selected .role-check {
+  background: var(--blue);
+  border-color: var(--blue);
+}
+.role-check::after {
+  content: '';
+  width: 5px; height: 8px;
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(45deg) translateY(-1px);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.role-card.selected .role-check::after { opacity: 1; }
+
+/* Error */
+.error-msg {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  background: var(--danger-soft);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: 8px;
+  padding: 10px 13px;
+  font-size: 0.8125rem;
+  color: #FCA5A5;
+  margin-bottom: 1rem;
+  animation: shake 0.4s cubic-bezier(.36,.07,.19,.97);
+}
+.error-msg.show { display: flex; }
+.error-msg svg { width:14px; height:14px; fill:none; stroke:#FCA5A5; stroke-width:2; flex-shrink:0; }
+@keyframes shake { 10%,90%{transform:translateX(-2px)} 20%,80%{transform:translateX(4px)} 30%,50%,70%{transform:translateX(-5px)} 40%,60%{transform:translateX(5px)} }
+
+/* Submit */
+.btn-signin {
+  width: 100%;
+  padding: 13px;
+  background: linear-gradient(135deg, var(--blue) 0%, #1D4ED8 100%);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-family: var(--font);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  box-shadow: 0 4px 16px var(--blue-glow);
+  transition: var(--transition);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.btn-signin::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0);
+  transition: background 0.2s;
+}
+.btn-signin:hover::before { background: rgba(255,255,255,0.07); }
+.btn-signin:hover { transform: translateY(-1px); box-shadow: 0 8px 24px var(--blue-glow); }
+.btn-signin:active { transform: translateY(0); }
+.btn-signin svg { width:16px; height:16px; fill:none; stroke:#fff; stroke-width:2.5; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
+
+/* Footer */
+.card-footer {
+  margin-top: 1.5rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: rgba(248,250,252,0.25);
+  font-family: var(--mono);
+  letter-spacing: 0.02em;
+}
+.card-footer span { color: rgba(248,250,252,0.45); }
+
+/* Loading spinner inside button */
+@keyframes spin { to { transform:rotate(360deg); } }
+.spinner {
+  width:16px; height:16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  display: none;
+}
+.btn-signin.loading .spinner { display: block; }
+.btn-signin.loading .btn-label { display: none; }
+</style>
+</head>
+<body>
+<div class="glow-br"></div>
+
+<div class="card">
+  <div class="logo-row">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" stroke="currentColor"/></svg>
+    </div>
+    <div class="logo-text">
+      <div class="logo-title">Key Issuance System</div>
+      <div class="logo-sub">ICPS — physical access management</div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="signin-heading">Sign in</div>
+  <div class="signin-sub">Select your role and enter your credentials to continue.</div>
+
+  <!-- Role Selector -->
+  <div class="role-grid" id="roleGrid">
+    <label class="role-card selected" id="roleCard-admin">
+      <input type="radio" name="role" value="admin" checked>
+      <div class="role-check"></div>
+      <div class="role-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" stroke="currentColor"/></svg>
+      </div>
+      <div class="role-name">Administrator</div>
+      <div class="role-desc">Full system access &amp; management</div>
+    </label>
+    <label class="role-card" id="roleCard-security">
+      <input type="radio" name="role" value="security">
+      <div class="role-check"></div>
+      <div class="role-icon">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="currentColor"/><path d="M6 20v-2a6 6 0 0 1 12 0v2" stroke="currentColor"/></svg>
+      </div>
+      <div class="role-name">Security Personnel</div>
+      <div class="role-desc">Issue keys &amp; view records</div>
+    </label>
+  </div>
+
+  <!-- Username -->
+  <div class="field">
+    <label for="username">Username</label>
+    <div class="input-wrap">
+      <input type="text" id="username" placeholder="Enter your username" autocomplete="username" />
+      <svg class="field-icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="currentColor"/><path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="currentColor"/></svg>
+    </div>
+  </div>
+
+  <!-- Password -->
+  <div class="field" style="margin-bottom:1.5rem;">
+    <label for="password">Password</label>
+    <div class="input-wrap">
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password" />
+      <svg class="field-icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" stroke="currentColor"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor"/></svg>
+      <button type="button" class="pw-toggle" id="pwToggle" aria-label="Toggle password visibility">
+        <svg id="pwEye" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div class="error-msg" id="errorMsg">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+    <span id="errorText">Invalid username or password. Please try again.</span>
+  </div>
+
+  <!-- Submit -->
+  <button class="btn-signin" id="signinBtn">
+    <span class="btn-label" style="display:flex;align-items:center;gap:8px;">
+      <svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="currentColor"/></svg>
+      Sign In
+    </span>
+    <div class="spinner"></div>
+  </button>
+
+  <div class="card-footer">
+    <span>ICPS</span> · Integrated Control &amp; Protection System · v2.0
+  </div>
+</div>
+
+<script>
+// ── Credentials ──────────────────────────────────────────────────
+// In production, replace this with a real server-side auth call.
+const USERS = {
+  admin:    { password: 'icps2024',    role: 'admin',    name: 'Administrator' },
+  security: { password: 'security2024', role: 'security', name: 'Security Personnel' }
+};
+
+const SESSION_KEY = 'icps_user_session';
+
+// ── Role card toggle ─────────────────────────────────────────────
+document.querySelectorAll('.role-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    card.querySelector('input[type=radio]').checked = true;
+    // Pre-fill username hint
+    const role = card.querySelector('input').value;
+    const usernameInput = document.getElementById('username');
+    if (!usernameInput.value) usernameInput.value = role;
+    clearError();
+  });
+});
+
+// ── Password toggle ──────────────────────────────────────────────
+document.getElementById('pwToggle').addEventListener('click', () => {
+  const input = document.getElementById('password');
+  const eye = document.getElementById('pwEye');
+  if (input.type === 'password') {
+    input.type = 'text';
+    eye.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  } else {
+    input.type = 'password';
+    eye.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  }
+});
+
+// ── Error helpers ────────────────────────────────────────────────
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  document.getElementById('errorText').textContent = msg;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+}
+function clearError() {
+  document.getElementById('errorMsg').classList.remove('show');
+}
+
+// ── Sign-in logic ────────────────────────────────────────────────
+async function handleSignIn() {
+  const username = document.getElementById('username').value.trim().toLowerCase();
+  const password = document.getElementById('password').value;
+  const selectedRole = document.querySelector('input[name=role]:checked').value;
+  clearError();
+
+  if (!username || !password) {
+    showError('Please enter both username and password.');
+    return;
+  }
+
+  const btn = document.getElementById('signinBtn');
+  btn.classList.add('loading');
+  btn.disabled = true;
+
+  // Simulate async auth (replace with real API call)
+  await new Promise(r => setTimeout(r, 600));
+
+  const user = USERS[username];
+  if (!user || user.password !== password) {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+    showError('Invalid username or password. Please try again.');
+    document.getElementById('password').value = '';
+    return;
+  }
+
+  if (user.role !== selectedRole) {
+    btn.classList.remove('loading');
+    btn.disabled = false;
+    showError(`This account does not have the "${selectedRole === 'admin' ? 'Administrator' : 'Security Personnel'}" role.`);
+    return;
+  }
+
+  // Store session
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+      username,
+      role: user.role,
+      name: user.name,
+      loginTime: Date.now(),
+      expiry: Date.now() + 8 * 60 * 60 * 1000 // 8-hour session
+    }));
+  } catch(e) {}
+
+  // Redirect
+  window.location.href = 'index.html';
+}
+
+document.getElementById('signinBtn').addEventListener('click', handleSignIn);
+document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') handleSignIn(); });
+document.getElementById('username').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('password').focus(); });
+
+// ── If already logged in, redirect straight to app ───────────────
+try {
+  const s = JSON.parse(sessionStorage.getItem(SESSION_KEY));
+  if (s && s.expiry > Date.now()) {
+    window.location.href = 'index.html';
+  }
+} catch(e) {}
+
+// Pre-select admin username
+document.getElementById('username').value = 'admin';
+</script>
+</body>
+</html>
