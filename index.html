@@ -60,6 +60,10 @@ body { font-family:var(--font-sans); background:var(--bg-body); color:var(--text
 .field input::placeholder, .field textarea::placeholder { color:var(--text-tertiary); }
 .field input:focus, .field select:focus, .field textarea:focus { border-color:var(--accent); background-color:var(--bg-card); box-shadow:0 0 0 3px var(--accent-light); }
 .field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible { outline:none; }
+/* Key select hint */
+.key-hint { font-size:0.6875rem; color:var(--text-tertiary); margin-top:4px; min-height:16px; transition:var(--transition); }
+.key-hint.warn { color:var(--warning); font-weight:600; }
+.key-hint.info { color:var(--success); font-weight:600; }
 .sig-wrap { border:1px solid var(--border); border-radius:var(--radius-md); background:var(--bg-surface); overflow:hidden; position:relative; transition:var(--transition); width:320px; height:120px; }
 .sig-wrap.missing { border-color:var(--danger); box-shadow:0 0 0 3px var(--danger-bg); }
 .sig-wrap canvas { width:100%; height:100%; display:block; cursor:crosshair; touch-action:none; }
@@ -144,6 +148,10 @@ tr:last-child td { border-bottom:none; }
 .settings-toggle:hover { color:var(--accent); }
 .settings-panel { background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:1rem; margin-bottom:1rem; display:none; }
 .settings-panel.show { display:block; }
+/* Dept mismatch warning banner */
+.dept-mismatch-banner { display:none; align-items:center; gap:8px; background:var(--warning-bg); border:1px solid #FDE68A; border-radius:var(--radius-md); padding:10px 14px; font-size:0.8125rem; color:var(--warning); font-weight:500; margin-bottom:12px; }
+.dept-mismatch-banner.show { display:flex; }
+.dept-mismatch-banner svg { flex-shrink:0; }
 @media (max-width:900px) { .form-grid-4 { grid-template-columns:repeat(2,1fr); } }
 @media (max-width:768px) { .stats { grid-template-columns:repeat(2,1fr); } .form-grid-3 { grid-template-columns:1fr; } .form-grid-2 { grid-template-columns:1fr; } .form-grid-4 { grid-template-columns:1fr; } .toolbar { flex-direction:column; align-items:stretch; } .search-wrap { min-width:auto; } .filter-row { justify-content:center; } th,td { padding:10px 8px; font-size:0.75rem; } .c-ac { width:100px; } }
 @media (max-width:480px) { #app { padding:1rem; } .stats { grid-template-columns:1fr; } .header { flex-direction:column; align-items:flex-start; gap:8px; } .modal-overlay { padding:1rem 0.5rem; } }
@@ -185,7 +193,7 @@ tr:last-child td { border-bottom:none; }
 
   <button class="settings-toggle" id="settingsToggle" aria-expanded="false" aria-controls="settingsPanel">
     <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor"/></svg>
-    Email & Export Settings
+    Email &amp; Export Settings
   </button>
   <div class="settings-panel" id="settingsPanel" role="region" aria-label="Email and export settings">
     <div class="form-grid-2">
@@ -238,8 +246,28 @@ tr:last-child td { border-bottom:none; }
     <div class="panel-body">
       <div class="form-grid-4">
         <div class="field"><label for="fBy">Issued by<span class="req">*</span></label><input id="fBy" placeholder="Staff name" autocomplete="off" /></div>
-        <div class="field"><label for="fDept">Department<span class="req">*</span></label>
-          <select id="fDept"><option value="">Select department…</option><option value="Offset">Offset</option><option value="Flexo">Flexo</option><option value="Silkscreen">Silkscreen</option><option value="Lamination">Lamination</option><option value="Collation">Collation</option><option value="Punching">Punching</option><option value="Stores">Stores</option><option value="Maintenance">Maintenance</option><option value="Security & Risk">Security & Risk</option><option value="Bureau">Bureau</option><option value="M & E">M & E</option><option value="Prepress">Prepress</option><option value="Packaging">Packaging</option><option value="Quality & Control">Quality & Control</option><option value="Administration">Administration</option><option value="IT">IT</option><option value="HR">HR</option><option value="Finance">Finance</option></select>
+        <div class="field">
+          <label for="fDept">Department<span class="req">*</span></label>
+          <select id="fDept">
+            <option value="">Select department…</option>
+            <option value="ADMIN">Administration</option>
+            <option value="ADMIN">Admin</option>
+            <option value="BUREAU">Bureau</option>
+            <option value="CARD PUNCHING">Card Punching</option>
+            <option value="LAMINATION">Lamination</option>
+            <option value="MAINTENANCE">Maintenance</option>
+            <option value="MILLING AND EMBEDDING">Milling and Embedding</option>
+            <option value="OFFSET">Offset</option>
+            <option value="PAC">PAC</option>
+            <option value="PACKAGING">Packaging</option>
+            <option value="PRE-PRESS">Pre-Press</option>
+            <option value="PUNCHING">Punching</option>
+            <option value="QC">Quality Control (QC)</option>
+            <option value="SECURITY">Security</option>
+            <option value="STORES">Stores</option>
+            <option value="PROCUREMENT">Procurement</option>
+            <option value="IT">IT</option>
+          </select>
         </div>
         <div class="field"><label for="fRec">Recipient<span class="req">*</span></label><input id="fRec" placeholder="Recipient name" autocomplete="off" /></div>
         <div class="field"><label for="fPur">Purpose<span class="req">*</span></label><input id="fPur" placeholder="Reason for key" autocomplete="off" /></div>
@@ -248,8 +276,21 @@ tr:last-child td { border-bottom:none; }
         <div class="field"><label>Issued by — signature<span class="req">*</span></label><div class="sig-wrap" id="wrapIssueSigBy"><canvas id="issueSigByCanvas"></canvas><button type="button" class="sig-clear" id="issueSigByClear">Clear</button></div></div>
         <div class="field"><label>Recipient — signature<span class="req">*</span></label><div class="sig-wrap" id="wrapIssueSigRec"><canvas id="issueSigRecCanvas"></canvas><button type="button" class="sig-clear" id="issueSigRecClear">Clear</button></div></div>
       </div>
+
+      <!-- Department-key mismatch warning -->
+      <div class="dept-mismatch-banner" id="deptMismatchBanner" role="alert">
+        <svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4m0 4h.01"/></svg>
+        <span id="deptMismatchMsg"></span>
+      </div>
+
       <div class="form-grid-2">
-        <div class="field"><label for="fKey">Select key<span class="req">*</span></label><select id="fKey"></select></div>
+        <div class="field">
+          <label for="fKey">Select key<span class="req">*</span></label>
+          <select id="fKey">
+            <option value="">Select a department first…</option>
+          </select>
+          <div class="key-hint" id="keyHint"></div>
+        </div>
         <div class="field"><button class="btn btn-primary" id="issueBtn"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor"/></svg>Issue key</button></div>
       </div>
     </div>
@@ -313,6 +354,45 @@ tr:last-child td { border-bottom:none; }
 <script>
 const API_BASE = '';
 
+/* ═══════════════════════════════════════════════════════════════
+   DEPARTMENT → KEY MAP  (sourced from KEYS.xlsx)
+   Maps each department to the list of key IDs it can access.
+   Keys in multiple departments appear in each relevant entry.
+   ═══════════════════════════════════════════════════════════════ */
+const DEPT_KEY_MAP = {
+  "ADMINISTRATION":              ["BR-R75","B12","LDM 1","LBEG","CSM","LBM"],
+  "ADMIN":                       ["BR-R75","B12","LDM 1","LBEG","CSM","LBM"],
+  "BUREAU":                      ["BC 2", "BMX 61 FIN", "BMX 60", "BMX 61 FUL", "M/E QC 4", "DG", "BC 1"],
+  "CARD PUNCHING":               ["PC 2", "PM 1", "PM 2", "PC 1", "HSM 1"],
+  "LAMINATION":                  ["LAM 5", "LAM 7", "LAM 4", "LAM 6"],
+  "MAINTENANCE":                 ["MGMC", "OU 1", "OU 2", "ESM", "MG 1", "CMGP 1", "PAMG 1", "MGT", "B12", "G3","LDM 1", "RB", "CPS", "LBEG", "GAK", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM", "DT"],
+  "MILLING AND EMBEDDING":       ["KMR 1"],
+  "OFFSET":                      ["SM52", "OFD 1", "OICO"],
+  "PAC":                         ["VAT P", "MEC 4", "PAC 1", "PAC 2", "PAC 3", "PAC 4", "OICP", "VS 1", "VS 2", "VS 3"],
+  "IT":                          ["MSR", "B61", "B61 (2)", "B61 (4)", "SCR KR", "SCR KR 1"],
+  "PACKAGING":                   ["BPC 3", "PMC 3"],
+  "PRE-PRESS":                   ["PPL 1", "PPL 2", "PPL 3", "PLPS 1", "PLPS 2", "PLPS 3"],
+  "QC":                          ["GAC 1", "GAC 2", "M/E QC 4"],
+  "SECURITY":                    ["BGKF RIGHT", "BGKF LEFT", "SCR CS 1", "SCR CS 2", "SCR CS 3", "SCR CS 4", "BGKS LEFT", "BGKS LEFT", "MGMC", "PAMG 1", "MGT", "G3", "RB", "CPS", "LBEG", "GAK", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM", "CPS"],
+  "STORES":                      ["LBEG", "LBM", "ESM", "VMC B", "VAT S", "GAK", "VS 1", "VS 2", "VS 3"],
+  "PROCUREMENT":                 ["LBEG", "LBM", "ESM", "GAK", "CSM"],
+};
+
+/* All unique key IDs from the master list */
+const ALL_KEYS_MASTER = [
+  "B61","B61(2)","B61(4)","SCR KR","SCR KR 1","PMC 3","KMR 1","MEC 4",
+  "PAC 1","PAC 2","PAC 3","PAC 4","PPL 1","PPL 2","PPL 3","PLPS 1","PLPS 2","PLPS 3",
+  "BMX 61 FIN","BMX 60","BMX 61 FUL","BMX 61","BGKF RIGHT","BGKF LEFT","M/E QC 4",
+  "BPC 3","SCR CS 1","SCR CS 2","SCR CS 3","SCR CS 4","GAC 1","GAC 2",
+  "BR-R75","BGKS LEFT","BGKS RIGHT","QC LAB","QC LAB(2)","QC LAB(3)",
+  "MSR","VS 1","VS 2","VS 3","VS 4","PM 1","PM 2","PC 1","PC 2",
+  "SM52","HSM 1","LAM 7","LAM 4","LAM 5","OFD 1","LAM 6",
+  "VMC B","VMC G","MGMC","OU 1","OU 2","OU 3","ESM","MG 1","CMGP 1",
+  "PAMG 1","MGT","B12","G 3","LDM 1","RB","CPS","LBEG",
+  "DG","BC 1","BC 2","GAK","7A","7B","7C","7D","CSM","WAF","LBM",
+  "DT","OICP","OICO","VAT P","VAT S"
+];
+
 /* ── Admin Auth State ────────────────────────────────────────── */
 const ADMIN_SESSION_KEY = 'icps_admin_session';
 const ADMIN_SESSION_DURATION_MS = 30 * 60 * 1000;
@@ -324,15 +404,8 @@ let adminLockedUntil = 0;
 let adminSessionExpiry = 0;
 let pendingAdminAction = null;
 
-/* ── Admin Auth: Server-side verification (recommended) ────────
-   For production, replace verifyAdminCredentials with an API call.
-   The client-side fallback below is for demo/development only.    */
 async function verifyAdminCredentials(username, password) {
-  // PRODUCTION: Uncomment and use server-side auth
-  // const res = await apiPost('/api/admin/login', { username, password });
-  // return res.success ? { valid: true, token: res.token } : { valid: false };
-
-  // DEMO FALLBACK (remove in production):
+  // PRODUCTION: replace with server-side auth API call
   const validUsers = { 'admin': 'icps2024', 'security': 'security2024' };
   if (validUsers[username] && validUsers[username] === password) {
     return { valid: true, token: 'demo-token-' + Date.now() };
@@ -344,10 +417,7 @@ function isAdminSessionActive() {
   if (Date.now() < adminSessionExpiry) return true;
   try {
     const s = JSON.parse(sessionStorage.getItem(ADMIN_SESSION_KEY));
-    if (s && s.expiry > Date.now()) {
-      adminSessionExpiry = s.expiry;
-      return true;
-    }
+    if (s && s.expiry > Date.now()) { adminSessionExpiry = s.expiry; return true; }
   } catch(e) {}
   return false;
 }
@@ -355,20 +425,13 @@ function isAdminSessionActive() {
 function setAdminSession(token) {
   adminSessionExpiry = Date.now() + ADMIN_SESSION_DURATION_MS;
   adminAttempts = 0;
-  try {
-    sessionStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify({
-      expiry: adminSessionExpiry,
-      token: token
-    }));
-  } catch(e) {}
+  try { sessionStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify({ expiry: adminSessionExpiry, token })); } catch(e) {}
   updateAdminBadge();
 }
 
 function clearAdminSession() {
   adminSessionExpiry = 0;
-  try {
-    sessionStorage.removeItem(ADMIN_SESSION_KEY);
-  } catch(e) {}
+  try { sessionStorage.removeItem(ADMIN_SESSION_KEY); } catch(e) {}
   updateAdminBadge();
 }
 
@@ -431,23 +494,15 @@ async function attemptAdminLogin() {
   }
   const username = document.getElementById('adminUsername').value.trim();
   const password = document.getElementById('adminPassword').value;
-  if (!username || !password) {
-    showAdminError('Please enter both username and password.');
-    return;
-  }
+  if (!username || !password) { showAdminError('Please enter both username and password.'); return; }
   try {
     const result = await verifyAdminCredentials(username, password);
     if (result.valid) {
       setAdminSession(result.token);
       closeAdminAuthModal();
       toast('Admin session started (30 min)', 'success');
-      if (typeof pendingAdminAction === 'function') {
-        pendingAdminAction();
-        pendingAdminAction = null;
-      }
-    } else {
-      handleFailedLogin();
-    }
+      if (typeof pendingAdminAction === 'function') { pendingAdminAction(); pendingAdminAction = null; }
+    } else { handleFailedLogin(); }
   } catch (err) {
     showAdminError('Authentication service unavailable. Please try again.');
   }
@@ -471,15 +526,9 @@ function handleFailedLogin() {
 
 document.getElementById('adminAuthConfirm').addEventListener('click', attemptAdminLogin);
 document.getElementById('adminAuthCancel').addEventListener('click', closeAdminAuthModal);
-document.getElementById('adminAuthModal').addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) closeAdminAuthModal();
-});
-document.getElementById('adminPassword').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') attemptAdminLogin();
-});
-document.getElementById('adminUsername').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') document.getElementById('adminPassword').focus();
-});
+document.getElementById('adminAuthModal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeAdminAuthModal(); });
+document.getElementById('adminPassword').addEventListener('keydown', (e) => { if (e.key === 'Enter') attemptAdminLogin(); });
+document.getElementById('adminUsername').addEventListener('keydown', (e) => { if (e.key === 'Enter') document.getElementById('adminPassword').focus(); });
 document.getElementById('toggleAdminPw').addEventListener('click', () => {
   const input = document.getElementById('adminPassword');
   const icon = document.getElementById('eyeIcon');
@@ -515,10 +564,7 @@ function initSigPad(canvasId, clearBtnId) {
     canvas.height = rect.height * dpr;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = '#0F172A';
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.lineWidth = 2; ctx.strokeStyle = '#0F172A';
   }
   resize();
   window.addEventListener('resize', resize);
@@ -528,21 +574,8 @@ function initSigPad(canvasId, clearBtnId) {
     const clientY = e.touches ? e.touches[0].clientY : e.clientY;
     return { x: clientX - rect.left, y: clientY - rect.top };
   }
-  function start(e) {
-    drawing = true;
-    const pos = getPos(e);
-    ctx.beginPath();
-    ctx.moveTo(pos.x, pos.y);
-    canvas.parentElement.classList.remove('missing');
-    e.preventDefault();
-  }
-  function move(e) {
-    if (!drawing) return;
-    const pos = getPos(e);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
-    e.preventDefault();
-  }
+  function start(e) { drawing = true; const pos = getPos(e); ctx.beginPath(); ctx.moveTo(pos.x, pos.y); canvas.parentElement.classList.remove('missing'); e.preventDefault(); }
+  function move(e) { if (!drawing) return; const pos = getPos(e); ctx.lineTo(pos.x, pos.y); ctx.stroke(); e.preventDefault(); }
   function end() { drawing = false; }
   canvas.addEventListener('mousedown', start);
   canvas.addEventListener('mousemove', move);
@@ -552,12 +585,7 @@ function initSigPad(canvasId, clearBtnId) {
   canvas.addEventListener('touchmove', move, { passive: false });
   canvas.addEventListener('touchend', end);
   const clearBtn = document.getElementById(clearBtnId);
-  if (clearBtn) {
-    clearBtn.addEventListener('click', () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      canvas.parentElement.classList.remove('missing');
-    });
-  }
+  if (clearBtn) clearBtn.addEventListener('click', () => { ctx.clearRect(0, 0, canvas.width, canvas.height); canvas.parentElement.classList.remove('missing'); });
   sigPads[canvasId] = { canvas, ctx, resize };
 }
 
@@ -566,8 +594,7 @@ function getSigData(canvasId) {
   if (!canvas) return null;
   const ctx = canvas.getContext('2d');
   const pixelBuffer = new Uint32Array(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
-  const isBlank = !pixelBuffer.some(color => color !== 0);
-  return isBlank ? null : canvas.toDataURL('image/png');
+  return pixelBuffer.some(color => color !== 0) ? canvas.toDataURL('image/png') : null;
 }
 
 function isSigBlank(canvasId) {
@@ -580,21 +607,11 @@ function isSigBlank(canvasId) {
 
 function clearSig(canvasId) {
   const c = document.getElementById(canvasId);
-  if (c) {
-    c.getContext('2d').clearRect(0, 0, c.width, c.height);
-    c.parentElement.classList.remove('missing');
-  }
+  if (c) { c.getContext('2d').clearRect(0, 0, c.width, c.height); c.parentElement.classList.remove('missing'); }
 }
 
-function clearIssueSigs() {
-  clearSig('issueSigByCanvas');
-  clearSig('issueSigRecCanvas');
-}
-
-function clearReturnSigs() {
-  clearSig('sigByCanvas');
-  clearSig('sigToCanvas');
-}
+function clearIssueSigs() { clearSig('issueSigByCanvas'); clearSig('issueSigRecCanvas'); }
+function clearReturnSigs() { clearSig('sigByCanvas'); clearSig('sigToCanvas'); }
 
 function flashMissing(wrapId) {
   const el = document.getElementById(wrapId);
@@ -618,9 +635,8 @@ function fmt(ts) {
   if (!ts) return '—';
   const d = new Date(ts);
   if (isNaN(d.getTime())) return '—';
-  const date = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-  return date + ' · ' + time;
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + ' · ' +
+         d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
 function escapeHtml(str) {
@@ -637,13 +653,9 @@ function toast(msg, type) {
   type = type || 'success';
   const container = document.getElementById('toastContainer');
   if (!container) return;
-
-  // Deduplicate: remove identical toast if already showing
   for (const existing of activeToasts) {
     if (existing.dataset.msg === msg && existing.dataset.type === type) {
-      // Reset timer on duplicate
-      clearTimeout(existing._removeTimer);
-      clearTimeout(existing._hideTimer);
+      clearTimeout(existing._removeTimer); clearTimeout(existing._hideTimer);
       existing._hideTimer = setTimeout(() => {
         existing.classList.remove('show');
         existing._removeTimer = setTimeout(() => { existing.remove(); activeToasts.delete(existing); }, 300);
@@ -651,17 +663,10 @@ function toast(msg, type) {
       return;
     }
   }
-
-  // Limit max toasts
-  if (activeToasts.size >= MAX_TOASTS) {
-    const oldest = activeToasts.values().next().value;
-    if (oldest) { oldest.remove(); activeToasts.delete(oldest); }
-  }
-
+  if (activeToasts.size >= MAX_TOASTS) { const oldest = activeToasts.values().next().value; if (oldest) { oldest.remove(); activeToasts.delete(oldest); } }
   const el = document.createElement('div');
   el.className = 'toast ' + type;
-  el.dataset.msg = msg;
-  el.dataset.type = type;
+  el.dataset.msg = msg; el.dataset.type = type;
   el.innerHTML = (type === 'success' ? ICONS.check : ICONS.alert) + '<span>' + escapeHtml(msg) + '</span>';
   container.appendChild(el);
   activeToasts.add(el);
@@ -686,11 +691,7 @@ async function apiGet(endpoint) {
 
 async function apiPost(endpoint, body) {
   try {
-    const res = await fetch(API_BASE + endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
+    const res = await fetch(API_BASE + endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   } catch (err) {
@@ -701,11 +702,7 @@ async function apiPost(endpoint, body) {
 
 async function apiPut(endpoint, body) {
   try {
-    const res = await fetch(API_BASE + endpoint, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
+    const res = await fetch(API_BASE + endpoint, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     if (!res.ok) throw new Error(await res.text());
     return res.json();
   } catch (err) {
@@ -718,25 +715,12 @@ async function apiPut(endpoint, body) {
 function confirmAction(title, body, onConfirm) {
   document.getElementById('modalTitle').textContent = title;
   document.getElementById('modalBody').textContent = body;
-  const overlay = document.getElementById('confirmModal');
-  overlay.classList.add('show');
+  document.getElementById('confirmModal').classList.add('show');
   confirmCallback = onConfirm;
 }
-
-document.getElementById('modalCancel').addEventListener('click', () => {
-  document.getElementById('confirmModal').classList.remove('show');
-  confirmCallback = null;
-});
-document.getElementById('modalConfirm').addEventListener('click', () => {
-  document.getElementById('confirmModal').classList.remove('show');
-  if (confirmCallback) { confirmCallback(); confirmCallback = null; }
-});
-document.getElementById('confirmModal').addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) {
-    document.getElementById('confirmModal').classList.remove('show');
-    confirmCallback = null;
-  }
-});
+document.getElementById('modalCancel').addEventListener('click', () => { document.getElementById('confirmModal').classList.remove('show'); confirmCallback = null; });
+document.getElementById('modalConfirm').addEventListener('click', () => { document.getElementById('confirmModal').classList.remove('show'); if (confirmCallback) { confirmCallback(); confirmCallback = null; } });
+document.getElementById('confirmModal').addEventListener('click', (e) => { if (e.target === e.currentTarget) { document.getElementById('confirmModal').classList.remove('show'); confirmCallback = null; } });
 
 /* ── Return Modal ────────────────────────────────────────────── */
 function openReturnModal(idx) {
@@ -752,11 +736,7 @@ function openReturnModal(idx) {
   setTimeout(() => document.getElementById('rReturnedBy').focus(), 100);
 }
 
-function closeReturnModal() {
-  document.getElementById('returnModal').classList.remove('show');
-  returnTargetIdx = null;
-}
-
+function closeReturnModal() { document.getElementById('returnModal').classList.remove('show'); returnTargetIdx = null; }
 document.getElementById('returnCancel').addEventListener('click', closeReturnModal);
 document.getElementById('returnConfirm').addEventListener('click', async () => {
   if (returnTargetIdx === null) return;
@@ -771,21 +751,13 @@ document.getElementById('returnConfirm').addEventListener('click', async () => {
   if (sigToBlank) { flashMissing('wrapRetSigTo'); toast('Please provide signature for "Returned to"', 'error'); hasError = true; }
   if (hasError) return;
   try {
-    await apiPut('/api/records/' + records[returnTargetIdx].id + '/return', {
-      returnedBy, returnedTo,
-      sigBy: getSigData('sigByCanvas'),
-      sigTo: getSigData('sigToCanvas')
-    });
+    await apiPut('/api/records/' + records[returnTargetIdx].id + '/return', { returnedBy, returnedTo, sigBy: getSigData('sigByCanvas'), sigTo: getSigData('sigToCanvas') });
     await loadRecords();
     closeReturnModal();
     toast(records[returnTargetIdx].keyId + ' returned successfully');
-  } catch (err) {
-    toast(err.message, 'error');
-  }
+  } catch (err) { toast(err.message, 'error'); }
 });
-document.getElementById('returnModal').addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) closeReturnModal();
-});
+document.getElementById('returnModal').addEventListener('click', (e) => { if (e.target === e.currentTarget) closeReturnModal(); });
 
 /* ── Stats ───────────────────────────────────────────────────── */
 let allKeys = [];
@@ -801,19 +773,122 @@ function stats() {
   document.getElementById('sRevoked').textContent = revoked.length;
 }
 
-/* ── Key Selector ────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   KEY SELECTOR  — filtered by selected department
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Returns the list of key IDs allowed for a given department.
+ * Falls back to all available keys from the server if dept has no mapping.
+ */
+function getKeysForDept(dept) {
+  if (!dept) return null; // no dept selected
+  return DEPT_KEY_MAP[dept] || null;
+}
+
+/**
+ * Re-populates the key <select> based on:
+ *   1. The currently selected department (DEPT_KEY_MAP filter)
+ *   2. Which keys are actually available (not currently issued/revoked) from the server
+ * Also updates the hint text and mismatch banner.
+ */
 async function populateSel() {
+  const dept = document.getElementById('fDept').value;
+  const sel = document.getElementById('fKey');
+  const hint = document.getElementById('keyHint');
+  const banner = document.getElementById('deptMismatchBanner');
+  const bannerMsg = document.getElementById('deptMismatchMsg');
+
+  // Hide banner by default
+  banner.classList.remove('show');
+  hint.className = 'key-hint';
+  hint.textContent = '';
+
+  if (!dept) {
+    sel.innerHTML = '<option value="">Select a department first…</option>';
+    return;
+  }
+
+  let availableFromServer = [];
   try {
-    const avail = await apiGet('/api/keys/available');
-    const sel = document.getElementById('fKey');
-    if (!sel) return;
-    sel.innerHTML = avail.length
-      ? avail.map(k => '<option value="' + escapeHtml(k) + '">' + escapeHtml(k) + '</option>').join('')
-      : '<option value="">No keys available</option>';
+    availableFromServer = await apiGet('/api/keys/available');
   } catch (err) {
     toast('Failed to load available keys', 'error');
+    sel.innerHTML = '<option value="">Error loading keys</option>';
+    return;
+  }
+
+  const deptKeys = getKeysForDept(dept); // null = dept not in map (show all)
+
+  if (!deptKeys) {
+    // Department not in master map — show all server-available keys with a note
+    if (availableFromServer.length) {
+      sel.innerHTML = availableFromServer.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+      hint.className = 'key-hint';
+      hint.textContent = availableFromServer.length + ' key(s) available';
+    } else {
+      sel.innerHTML = '<option value="">No keys available</option>';
+    }
+    return;
+  }
+
+  // Filter: only keys both in this dept's allowed list AND available on server
+  const deptAvailable = deptKeys.filter(k => availableFromServer.includes(k));
+  // Keys in dept's list but currently issued/unavailable
+  const deptUnavailable = deptKeys.filter(k => !availableFromServer.includes(k));
+
+  if (deptAvailable.length > 0) {
+    sel.innerHTML = deptAvailable.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+    hint.className = 'key-hint info';
+    const totalForDept = deptKeys.length;
+    hint.textContent = deptAvailable.length + ' of ' + totalForDept + ' department key(s) available';
+    if (deptUnavailable.length > 0) {
+      hint.textContent += ' (' + deptUnavailable.length + ' currently issued/unavailable)';
+    }
+  } else {
+    // No dept keys available — check if there are any at all
+    sel.innerHTML = '<option value="">No keys available for this department</option>';
+    hint.className = 'key-hint warn';
+    if (deptKeys.length > 0) {
+      hint.textContent = 'All ' + deptKeys.length + ' key(s) for this department are currently issued or unavailable.';
+    } else {
+      hint.textContent = 'No keys are assigned to this department.';
+    }
   }
 }
+
+/**
+ * Validates that the selected key actually belongs to the chosen department.
+ * Shows a warning banner if the key is outside the department's allowed list.
+ * Returns true if valid (or if we can't determine), false if clearly mismatched.
+ */
+function validateKeyDeptMatch(dept, keyId) {
+  const banner = document.getElementById('deptMismatchBanner');
+  const bannerMsg = document.getElementById('deptMismatchMsg');
+  if (!dept || !keyId) { banner.classList.remove('show'); return true; }
+  const deptKeys = getKeysForDept(dept);
+  if (!deptKeys) { banner.classList.remove('show'); return true; } // dept not mapped, no restriction
+  if (!deptKeys.includes(keyId)) {
+    bannerMsg.textContent = 'Key "' + keyId + '" is not assigned to the ' + dept + ' department. Please select a key from the list above, or change the department.';
+    banner.classList.add('show');
+    return false;
+  }
+  banner.classList.remove('show');
+  return true;
+}
+
+/* Listen for department change → re-filter keys */
+document.getElementById('fDept').addEventListener('change', () => {
+  document.getElementById('deptMismatchBanner').classList.remove('show');
+  populateSel();
+});
+
+/* Listen for key change → validate match */
+document.getElementById('fKey').addEventListener('change', () => {
+  const dept = document.getElementById('fDept').value;
+  const keyId = document.getElementById('fKey').value;
+  validateKeyDeptMatch(dept, keyId);
+});
 
 /* ── Filter & Search ─────────────────────────────────────────── */
 function filtered() {
@@ -836,36 +911,23 @@ function render(options) {
   const tb = document.getElementById('tBody');
   const em = document.getElementById('emptyMsg');
   document.getElementById('recCount').textContent = data.length + ' record' + (data.length === 1 ? '' : 's');
-
-  if (!data.length) {
-    tb.innerHTML = '';
-    em.style.display = 'block';
-    return;
-  }
+  if (!data.length) { tb.innerHTML = ''; em.style.display = 'block'; return; }
   em.style.display = 'none';
-
   tb.innerHTML = data.map(r => {
     const i = records.indexOf(r);
     const bc = r.status === 'Issued' ? 'b-issued' : r.status === 'Available' ? 'b-available' : 'b-revoked';
     const dc = r.status === 'Issued' ? 'dot-issued' : r.status === 'Available' ? 'dot-available' : 'dot-revoked';
     let acts = '';
     if (!isArchive) {
-      if (r.status === 'Issued') {
-        acts += '<button class="act ret" data-action="return" data-idx="' + i + '">' + ICONS.return + ' Return</button>';
-      }
-      if (r.status !== 'Revoked') {
-        acts += '<button class="act rev" data-action="revoke" data-idx="' + i + '">' + ICONS.revoke + ' Revoke</button>';
-      }
-    } else {
-      acts = '<span style="color:var(--text-tertiary);font-size:0.75rem;">Archived</span>';
-    }
+      if (r.status === 'Issued') acts += '<button class="act ret" data-action="return" data-idx="' + i + '">' + ICONS.return + ' Return</button>';
+      if (r.status !== 'Revoked') acts += '<button class="act rev" data-action="revoke" data-idx="' + i + '">' + ICONS.revoke + ' Revoke</button>';
+    } else { acts = '<span style="color:var(--text-tertiary);font-size:0.75rem;">Archived</span>'; }
     const retBy = r.returnedBy || '—';
     const retTo = r.returnedTo || '—';
     const hasSig = r.sigBy || r.sigTo ? ' ✓' : '';
     const sigTitle = [];
     if (r.sigBy) sigTitle.push('Returned by: signed');
     if (r.sigTo) sigTitle.push('Returned to: signed');
-    const titleAttr = sigTitle.length ? sigTitle.join(' | ') : '';
     return '<tr>' +
       '<td><span class="key-pill">' + ICONS.key + escapeHtml(r.keyId) + '</span></td>' +
       '<td><span class="dept-pill">' + escapeHtml(r.department || '—') + '</span></td>' +
@@ -874,7 +936,7 @@ function render(options) {
       '<td title="' + escapeHtml(r.purpose) + '">' + escapeHtml(r.purpose) + '</td>' +
       '<td style="color:var(--text-secondary)">' + fmt(r.dateIssued) + '</td>' +
       '<td style="color:var(--text-secondary)">' + fmt(r.dateReturned) + '</td>' +
-      '<td title="' + escapeHtml(titleAttr) + '">' + escapeHtml(retBy) + hasSig + '</td>' +
+      '<td title="' + escapeHtml(sigTitle.join(' | ')) + '">' + escapeHtml(retBy) + hasSig + '</td>' +
       '<td>' + escapeHtml(retTo) + '</td>' +
       '<td><span class="badge ' + bc + '"><span class="dot ' + dc + '"></span>' + r.status + '</span></td>' +
       '<td>' + acts + '</td>' +
@@ -884,52 +946,30 @@ function render(options) {
 
 /* ── Load Records ────────────────────────────────────────────── */
 async function loadRecords() {
-  try {
-    records = await apiGet('/api/records');
-    render();
-  } catch (err) {
-    toast('Failed to load records from database', 'error');
-  }
+  try { records = await apiGet('/api/records'); render(); } catch (err) { toast('Failed to load records from database', 'error'); }
 }
 
 async function loadKeys() {
-  try {
-    allKeys = await apiGet('/api/keys');
-    stats();
-  } catch (err) {
-    toast('Failed to load keys', 'error');
-  }
+  try { allKeys = await apiGet('/api/keys'); stats(); } catch (err) { toast('Failed to load keys', 'error'); }
 }
 
 /* ── Actions ─────────────────────────────────────────────────── */
-function doReturn(i) {
-  if (!records[i]) return;
-  openReturnModal(i);
-}
+function doReturn(i) { if (!records[i]) return; openReturnModal(i); }
 
 async function doRevoke(i) {
   const r = records[i];
   if (!r) return;
   function proceedWithRevoke() {
-    confirmAction(
-      'Revoke Key',
+    confirmAction('Revoke Key',
       'Are you sure you want to revoke ' + r.keyId + '? It was issued to ' + r.recipient + ' in ' + (r.department || 'Unknown Department') + '. This action cannot be undone.',
       async () => {
-        try {
-          await apiPut('/api/records/' + r.id + '/revoke', {});
-          await loadRecords();
-          toast(r.keyId + ' has been revoked');
-        } catch (err) {
-          toast(err.message, 'error');
-        }
+        try { await apiPut('/api/records/' + r.id + '/revoke', {}); await loadRecords(); toast(r.keyId + ' has been revoked'); }
+        catch (err) { toast(err.message, 'error'); }
       }
     );
   }
-  if (isAdminSessionActive()) {
-    proceedWithRevoke();
-  } else {
-    openAdminAuthModal(() => proceedWithRevoke(), 'revoke');
-  }
+  if (isAdminSessionActive()) { proceedWithRevoke(); }
+  else { openAdminAuthModal(() => proceedWithRevoke(), 'revoke'); }
 }
 
 document.getElementById('tBody').addEventListener('click', (e) => {
@@ -951,13 +991,23 @@ document.getElementById('issueBtn').addEventListener('click', async () => {
   const issueSigByBlank = isSigBlank('issueSigByCanvas');
   const issueSigRecBlank = isSigBlank('issueSigRecCanvas');
   let hasError = false;
-  if (!by || !dept || !rec || !pur || !kid) {
-    toast('Please fill in all fields', 'error');
-    hasError = true;
+
+  if (!by || !dept || !rec || !pur || !kid) { toast('Please fill in all fields', 'error'); hasError = true; }
+
+  // Department-key validation
+  if (dept && kid) {
+    const deptKeys = getKeysForDept(dept);
+    if (deptKeys && !deptKeys.includes(kid)) {
+      toast('Key "' + kid + '" is not authorised for the ' + dept + ' department', 'error');
+      document.getElementById('deptMismatchBanner').classList.add('show');
+      hasError = true;
+    }
   }
+
   if (issueSigByBlank) { flashMissing('wrapIssueSigBy'); toast('Please provide signature for "Issued by"', 'error'); hasError = true; }
   if (issueSigRecBlank) { flashMissing('wrapIssueSigRec'); toast('Please provide signature for "Recipient"', 'error'); hasError = true; }
   if (hasError) return;
+
   try {
     await apiPost('/api/records', {
       keyId: kid, issuedBy: by, department: dept, recipient: rec, purpose: pur,
@@ -969,22 +1019,21 @@ document.getElementById('issueBtn').addEventListener('click', async () => {
     document.getElementById('fDept').value = '';
     document.getElementById('fRec').value = '';
     document.getElementById('fPur').value = '';
+    document.getElementById('deptMismatchBanner').classList.remove('show');
+    document.getElementById('keyHint').textContent = '';
+    // Reset key select to placeholder
+    document.getElementById('fKey').innerHTML = '<option value="">Select a department first…</option>';
     clearIssueSigs();
     toast(kid + ' issued to ' + rec);
-  } catch (err) {
-    toast(err.message, 'error');
-  }
+  } catch (err) { toast(err.message, 'error'); }
 });
 
-/* ── Add Key (with Admin Auth Gate) ─────────────────────────── */
+/* ── Add Key (Admin gated) ───────────────────────────────────── */
 async function executeAddKey() {
   const keyId = document.getElementById('newKeyId').value.trim();
   const label = document.getElementById('newKeyLabel').value.trim();
   const location = document.getElementById('newKeyLocation').value.trim();
-  if (!keyId) {
-    toast('Key ID required', 'error');
-    return;
-  }
+  if (!keyId) { toast('Key ID required', 'error'); return; }
   try {
     await apiPost('/api/keys', { keyId, label, location });
     document.getElementById('newKeyId').value = '';
@@ -993,29 +1042,18 @@ async function executeAddKey() {
     await loadKeys();
     await populateSel();
     toast(keyId + ' added successfully');
-  } catch (err) {
-    toast(err.message, 'error');
-  }
+  } catch (err) { toast(err.message, 'error'); }
 }
 
 document.getElementById('addKeyBtn').addEventListener('click', () => {
   const keyId = document.getElementById('newKeyId').value.trim();
-  if (!keyId) {
-    toast('Key ID required', 'error');
-    return;
-  }
-  if (isAdminSessionActive()) {
-    executeAddKey();
-  } else {
-    openAdminAuthModal(() => executeAddKey(), 'add');
-  }
+  if (!keyId) { toast('Key ID required', 'error'); return; }
+  if (isAdminSessionActive()) { executeAddKey(); }
+  else { openAdminAuthModal(() => executeAddKey(), 'add'); }
 });
 
 /* ── Search ──────────────────────────────────────────────────── */
-document.getElementById('searchInput').addEventListener('input', e => {
-  search = e.target.value;
-  render();
-});
+document.getElementById('searchInput').addEventListener('input', e => { search = e.target.value; render(); });
 
 /* ── Filter Tabs ─────────────────────────────────────────────── */
 document.querySelectorAll('.ftab').forEach(t => {
@@ -1034,32 +1072,17 @@ document.getElementById('csvBtn').addEventListener('click', async () => {
   const smtpUser = document.getElementById('smtpUser').value.trim();
   const smtpPass = document.getElementById('smtpPass').value;
   const recipients = document.getElementById('emailRecipients').value.trim();
-  const emailConfig = (smtpHost && smtpUser && smtpPass && recipients) ? {
-    smtpHost, smtpPort: smtpPort || 465, smtpUser, smtpPass, recipients
-  } : null;
+  const emailConfig = (smtpHost && smtpUser && smtpPass && recipients) ? { smtpHost, smtpPort: smtpPort || 465, smtpUser, smtpPass, recipients } : null;
   try {
-    const result = await apiPost('/api/export', {
-      filter: filter === 'all' ? null : filter,
-      search: search || null,
-      emailConfig,
-      month: isViewingArchive ? currentArchiveMonth : null
-    });
+    const result = await apiPost('/api/export', { filter: filter === 'all' ? null : filter, search: search || null, emailConfig, month: isViewingArchive ? currentArchiveMonth : null });
     const a = document.createElement('a');
     a.href = API_BASE + result.downloadUrl;
     a.download = result.filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    if (result.email.sent) {
-      toast('CSV exported & emailed to ' + (result.email.recipients || 0) + ' recipient(s)');
-    } else if (result.email.error) {
-      toast('CSV downloaded. Email failed: ' + result.email.error, 'error');
-    } else {
-      toast('CSV exported. Configure email settings to send automatically.');
-    }
-  } catch (err) {
-    toast(err.message, 'error');
-  }
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    if (result.email.sent) { toast('CSV exported & emailed to ' + (result.email.recipients || 0) + ' recipient(s)'); }
+    else if (result.email.error) { toast('CSV downloaded. Email failed: ' + result.email.error, 'error'); }
+    else { toast('CSV exported. Configure email settings to send automatically.'); }
+  } catch (err) { toast(err.message, 'error'); }
 });
 
 /* ── Email Settings ──────────────────────────────────────────── */
@@ -1096,9 +1119,7 @@ document.getElementById('settingsToggle').addEventListener('click', () => {
 
 /* ── Date Stamp ──────────────────────────────────────────────── */
 const now = new Date();
-document.getElementById('dateStamp').textContent = now.toLocaleDateString('en-GB', {
-  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-});
+document.getElementById('dateStamp').textContent = now.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
 /* ── Keyboard Shortcuts ──────────────────────────────────────── */
 document.addEventListener('keydown', (e) => {
@@ -1106,9 +1127,7 @@ document.addEventListener('keydown', (e) => {
     document.getElementById('confirmModal').classList.remove('show');
     document.getElementById('returnModal').classList.remove('show');
     document.getElementById('adminAuthModal').classList.remove('show');
-    confirmCallback = null;
-    returnTargetIdx = null;
-    pendingAdminAction = null;
+    confirmCallback = null; returnTargetIdx = null; pendingAdminAction = null;
   }
   if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'SELECT' && document.activeElement.tagName !== 'TEXTAREA') {
     e.preventDefault();
@@ -1126,15 +1145,9 @@ async function loadArchivesList() {
     const sel = document.getElementById('archiveMonth');
     if (!sel) return;
     if (data.archives && data.archives.length > 0) {
-      sel.innerHTML = data.archives.map(a =>
-        '<option value="' + escapeHtml(a.month) + '">' + escapeHtml(a.month) + ' (' + (a.recordCount || 0) + ' records)</option>'
-      ).join('');
-    } else {
-      sel.innerHTML = '<option value="">No archives available</option>';
-    }
-  } catch (err) {
-    console.error('Failed to load archives list:', err);
-  }
+      sel.innerHTML = data.archives.map(a => '<option value="' + escapeHtml(a.month) + '">' + escapeHtml(a.month) + ' (' + (a.recordCount || 0) + ' records)</option>').join('');
+    } else { sel.innerHTML = '<option value="">No archives available</option>'; }
+  } catch (err) { console.error('Failed to load archives list:', err); }
 }
 
 async function loadArchiveMonth(month) {
@@ -1149,14 +1162,11 @@ async function loadArchiveMonth(month) {
     if (issuePanel) issuePanel.classList.add('panel-disabled');
     render({ isArchive: true });
     toast('Loaded archive for ' + month);
-  } catch (err) {
-    toast('Failed to load archive', 'error');
-  }
+  } catch (err) { toast('Failed to load archive', 'error'); }
 }
 
 async function returnToCurrent() {
-  isViewingArchive = false;
-  currentArchiveMonth = null;
+  isViewingArchive = false; currentArchiveMonth = null;
   document.getElementById('archiveInfo').textContent = '';
   const issuePanel = document.getElementById('issuePanel');
   if (issuePanel) issuePanel.classList.remove('panel-disabled');
@@ -1170,12 +1180,7 @@ document.getElementById('archiveToggle').addEventListener('click', () => {
   panel.style.display = isVisible ? 'none' : 'block';
   if (!isVisible) loadArchivesList();
 });
-
-document.getElementById('loadArchiveBtn').addEventListener('click', () => {
-  const month = document.getElementById('archiveMonth').value;
-  if (month) loadArchiveMonth(month);
-});
-
+document.getElementById('loadArchiveBtn').addEventListener('click', () => { const month = document.getElementById('archiveMonth').value; if (month) loadArchiveMonth(month); });
 document.getElementById('backToCurrentBtn').addEventListener('click', returnToCurrent);
 
 /* ── Boot ────────────────────────────────────────────────────── */
