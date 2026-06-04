@@ -174,7 +174,7 @@ tr:last-child td { border-bottom:none; }
       </div>
       <div>
         <div class="header-title">Key Issuance System</div>
-        <div class="header-sub">ICPS — physical access management</div>
+        <div class="header-sub">ICPS — Key access management</div>
       </div>
     </div>
     <div class="date-stamp" id="dateStamp" aria-label="Current date"></div>
@@ -211,7 +211,7 @@ tr:last-child td { border-bottom:none; }
   <div class="panel" id="archivePanel" style="display:none;">
     <div class="panel-header">
       <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor"/><path d="M7 10l5 5 5-5" stroke="currentColor"/><path d="M12 15V3" stroke="currentColor"/></svg>
-      Archive Browser
+      Archive Records
     </div>
     <div class="panel-body">
       <div class="form-grid-2" style="margin-bottom:12px;">
@@ -353,45 +353,6 @@ tr:last-child td { border-bottom:none; }
 
 <script>
 const API_BASE = '';
-
-/* ═══════════════════════════════════════════════════════════════
-   DEPARTMENT → KEY MAP  (sourced from KEYS.xlsx)
-   Maps each department to the list of key IDs it can access.
-   Keys in multiple departments appear in each relevant entry.
-   ═══════════════════════════════════════════════════════════════ */
-const DEPT_KEY_MAP = {
-  "ADMINISTRATION":              ["BR-R75","B12","LDM 1","LBEG","CSM","LBM"],
-  "ADMIN":                       ["BR-R75","B12","LDM 1","LBEG","CSM","LBM"],
-  "BUREAU":                      ["BC 2", "BMX 61 FIN", "BMX 60", "BMX 61 FUL", "M/E QC 4", "DG", "BC 1"],
-  "CARD PUNCHING":               ["PC 2", "PM 1", "PM 2", "PC 1", "HSM 1"],
-  "LAMINATION":                  ["LAM 5", "LAM 7", "LAM 4", "LAM 6"],
-  "MAINTENANCE":                 ["MGMC", "OU 1", "OU 2", "ESM", "MG 1", "CMGP 1", "PAMG 1", "MGT", "B12", "G3","LDM 1", "RB", "CPS", "LBEG", "GAK", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM", "DT"],
-  "MILLING AND EMBEDDING":       ["KMR 1"],
-  "OFFSET":                      ["SM52", "OFD 1", "OICO"],
-  "PAC":                         ["VAT P", "MEC 4", "PAC 1", "PAC 2", "PAC 3", "PAC 4", "OICP", "VS 1", "VS 2", "VS 3"],
-  "IT":                          ["MSR", "B61", "B61 (2)", "B61 (4)", "SCR KR", "SCR KR 1"],
-  "PACKAGING":                   ["BPC 3", "PMC 3"],
-  "PRE-PRESS":                   ["PPL 1", "PPL 2", "PPL 3", "PLPS 1", "PLPS 2", "PLPS 3"],
-  "QC":                          ["GAC 1", "GAC 2", "M/E QC 4"],
-  "SECURITY":                    ["BGKF RIGHT", "BGKF LEFT", "SCR CS 1", "SCR CS 2", "SCR CS 3", "SCR CS 4", "BGKS LEFT", "BGKS LEFT", "MGMC", "PAMG 1", "MGT", "G3", "RB", "CPS", "LBEG", "GAK", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM", "CPS"],
-  "STORES":                      ["LBEG", "LBM", "ESM", "VMC B", "VAT S", "GAK", "VS 1", "VS 2", "VS 3"],
-  "PROCUREMENT":                 ["LBEG", "LBM", "ESM", "GAK", "CSM"],
-};
-
-/* All unique key IDs from the master list */
-const ALL_KEYS_MASTER = [
-  "B61","B61(2)","B61(4)","SCR KR","SCR KR 1","PMC 3","KMR 1","MEC 4",
-  "PAC 1","PAC 2","PAC 3","PAC 4","PPL 1","PPL 2","PPL 3","PLPS 1","PLPS 2","PLPS 3",
-  "BMX 61 FIN","BMX 60","BMX 61 FUL","BMX 61","BGKF RIGHT","BGKF LEFT","M/E QC 4",
-  "BPC 3","SCR CS 1","SCR CS 2","SCR CS 3","SCR CS 4","GAC 1","GAC 2",
-  "BR-R75","BGKS LEFT","BGKS RIGHT","QC LAB","QC LAB(2)","QC LAB(3)",
-  "MSR","VS 1","VS 2","VS 3","VS 4","PM 1","PM 2","PC 1","PC 2",
-  "SM52","HSM 1","LAM 7","LAM 4","LAM 5","OFD 1","LAM 6",
-  "VMC B","VMC G","MGMC","OU 1","OU 2","OU 3","ESM","MG 1","CMGP 1",
-  "PAMG 1","MGT","B12","G 3","LDM 1","RB","CPS","LBEG",
-  "DG","BC 1","BC 2","GAK","7A","7B","7C","7D","CSM","WAF","LBM",
-  "DT","OICP","OICO","VAT P","VAT S"
-];
 
 /* ── Admin Auth State ────────────────────────────────────────── */
 const ADMIN_SESSION_KEY = 'icps_admin_session';
@@ -919,9 +880,15 @@ function render(options) {
     const dc = r.status === 'Issued' ? 'dot-issued' : r.status === 'Available' ? 'dot-available' : 'dot-revoked';
     let acts = '';
     if (!isArchive) {
-      if (r.status === 'Issued') acts += '<button class="act ret" data-action="return" data-idx="' + i + '">' + ICONS.return + ' Return</button>';
-      if (r.status !== 'Revoked') acts += '<button class="act rev" data-action="revoke" data-idx="' + i + '">' + ICONS.revoke + ' Revoke</button>';
-    } else { acts = '<span style="color:var(--text-tertiary);font-size:0.75rem;">Archived</span>'; }
+      if (r.status === 'Issued') {
+        acts += '<button class="act ret" data-action="return" data-idx="' + i + '">' + ICONS.return + ' Return</button>';
+      }
+      if (r.status !== 'Revoked') {
+        acts += '<button class="act rev" data-action="revoke" data-idx="' + i + '">' + ICONS.revoke + ' Revoke</button>';
+      }
+    } else {
+      acts = '<span style="color:var(--text-tertiary);font-size:0.75rem;">Archived</span>';
+    }
     const retBy = r.returnedBy || '—';
     const retTo = r.returnedTo || '—';
     const hasSig = r.sigBy || r.sigTo ? ' ✓' : '';
@@ -1185,6 +1152,7 @@ document.getElementById('backToCurrentBtn').addEventListener('click', returnToCu
 
 /* ── Boot ────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', async () => {
+  applyRBAC();
   initSigPad('issueSigByCanvas', 'issueSigByClear');
   initSigPad('issueSigRecCanvas', 'issueSigRecClear');
   initSigPad('sigByCanvas', 'sigByClear');
