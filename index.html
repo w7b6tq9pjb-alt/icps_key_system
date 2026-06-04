@@ -144,7 +144,7 @@ tr:last-child td { border-bottom:none; }
 .settings-toggle:hover { color:var(--accent); }
 .settings-panel { background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:1rem; margin-bottom:1rem; display:none; }
 .settings-panel.show { display:block; }
-@media (max-width:900px) { .form-grid-4 { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:700px) { .form-grid-4 { grid-template-columns:repeat(2,1fr); } }
 @media (max-width:768px) { .stats { grid-template-columns:repeat(2,1fr); } .form-grid-3 { grid-template-columns:1fr; } .form-grid-2 { grid-template-columns:1fr; } .form-grid-4 { grid-template-columns:1fr; } .toolbar { flex-direction:column; align-items:stretch; } .search-wrap { min-width:auto; } .filter-row { justify-content:center; } th,td { padding:10px 8px; font-size:0.75rem; } .c-ac { width:100px; } }
 @media (max-width:480px) { #app { padding:1rem; } .stats { grid-template-columns:1fr; } .header { flex-direction:column; align-items:flex-start; gap:8px; } .modal-overlay { padding:1rem 0.5rem; } }
 @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
@@ -261,8 +261,6 @@ tr:last-child td { border-bottom:none; }
             <option value="IT">IT</option>  
             <option value="HR">HR</option>
           </select>
-        <div class="field"><label for="fDept">Department<span class="req">*</span></label>
-          <select id="fDept"><option value="">Select department…</option><option value="Offset">Offset</option><option value="Flexo">Flexo</option><option value="Silkscreen">Silkscreen</option><option value="Lamination">Lamination</option><option value="Collation">Collation</option><option value="Punching">Punching</option><option value="Stores">Stores</option><option value="Maintenance">Maintenance</option><option value="Security & Risk">Security & Risk</option><option value="Bureau">Bureau</option><option value="M & E">M & E</option><option value="Prepress">Prepress</option><option value="Packaging">Packaging</option><option value="Quality & Control">Quality & Control</option><option value="Administration">Administration</option><option value="IT">IT</option><option value="HR">HR</option><option value="Finance">Finance</option></select>
         </div>
         <div class="field"><label for="fRec">Recipient<span class="req">*</span></label><input id="fRec" placeholder="Recipient name" autocomplete="off" /></div>
         <div class="field"><label for="fPur">Purpose<span class="req">*</span></label><input id="fPur" placeholder="Reason for key" autocomplete="off" /></div>
@@ -335,6 +333,54 @@ tr:last-child td { border-bottom:none; }
 
 <script>
 const API_BASE = '';
+
+/* ═══════════════════════════════════════════════════════════════
+   DEPARTMENT → KEY MAP  (sourced from KEYS.xlsx)
+   Maps each department to the list of key IDs it can access.
+   Keys in multiple departments appear in each relevant entry.
+   ═══════════════════════════════════════════════════════════════ */
+const DEPT_KEY_MAP = {
+  "ADMIN":                       ["GAC 2"],
+  "ADMIN/MAINTENANCE":           ["OU 3", "B12", "LDM 1"],
+  "ADMIN/MAINTENANCE/IT/MID":    ["BC 2"],
+  "BUREAU":                      ["PLPS 3", "BMX 61 FIN", "BMX 60", "BMX 61 FUL", "M/E QC 4", "DG", "BC 1"],
+  "CARD PUNCHING":               ["VS 4", "PM 1", "PM 2", "PC 1"],
+  "IT/MID":                      ["B61", "B61(2)", "BGKS RIGHT", "QC LAB", "QC LAB(2)", "QC LAB(3)"],
+  "LAMINATION":                  ["HSM 1", "LAM 7", "LAM 4", "OFD 1"],
+  "MAINTENANCE":                 ["MGMC", "OU 1", "OU 2", "ESM", "MG 1", "CMGP 1"],
+  "MILLING AND EMBEDDING":       ["KMR 1"],
+  "MILLING AND EMBEDDING/ QC":   ["BGKF LEFT"],
+  "OFFSET":                      ["PC 2", "LAM 5", "OICP"],
+  "PAC":                         ["PMC 3", "MEC 4", "PAC 1", "PAC 2", "PAC 3", "DT", "OICO"],
+  "PAC/STORES":                  ["MSR", "VS 1", "VS 2", "VS 3"],
+  "PACKAGING":                   ["SCR KR 1"],
+  "PRE-PRESS":                   ["PAC 4", "PPL 1", "PPL 2", "PPL 3", "PLPS 1", "PLPS 2"],
+  "PRE PRESS/STORES":            ["LBEG"],
+  "PUNCHING":                    ["SM52"],
+  "QC":                          ["SCR CS 4", "GAC 1"],
+  "SECURITY":                    ["B61(4)", "SCR KR", "BMX 61", "BGKF RIGHT", "BPC 3", "SCR CS 1", "SCR CS 2", "SCR CS 3", "BR-R75", "BGKS LEFT"],
+  "SECURITY & RISK":             ["CPS"],
+  "SECURITY/MAINTENANCE":        ["VMC G", "MGT", "RB", "GAK", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM"],
+  "SECURITY/MID":                ["PAMG 1"],
+  "SECURITY/MTN":                ["G 3"],
+  "STORES":                      ["VAT P", "VAT S"],
+  "VAULT ROOM":                  ["LAM 6", "VMC B"]
+};
+
+/* All unique key IDs from the master list */
+const ALL_KEYS_MASTER = [
+  "B61","B61(2)","B61(4)","SCR KR","SCR KR 1","PMC 3","KMR 1","MEC 4",
+  "PAC 1","PAC 2","PAC 3","PAC 4","PPL 1","PPL 2","PPL 3","PLPS 1","PLPS 2","PLPS 3",
+  "BMX 61 FIN","BMX 60","BMX 61 FUL","BMX 61","BGKF RIGHT","BGKF LEFT","M/E QC 4",
+  "BPC 3","SCR CS 1","SCR CS 2","SCR CS 3","SCR CS 4","GAC 1","GAC 2",
+  "BR-R75","BGKS LEFT","BGKS RIGHT","QC LAB","QC LAB(2)","QC LAB(3)",
+  "MSR","VS 1","VS 2","VS 3","VS 4","PM 1","PM 2","PC 1","PC 2",
+  "SM52","HSM 1","LAM 7","LAM 4","LAM 5","OFD 1","LAM 6",
+  "VMC B","VMC G","MGMC","OU 1","OU 2","OU 3","ESM","MG 1","CMGP 1",
+  "PAMG 1","MGT","B12","G 3","LDM 1","RB","CPS","LBEG",
+  "DG","BC 1","BC 2","GAK","7A","7B","7C","7D","CSM","WAF","LBM",
+  "DT","OICP","OICO","VAT P","VAT S"
+];
 
 /* ── User Session & RBAC ─────────────────────────────────────── */
 const USER_SESSION_KEY = 'icps_user_session';
