@@ -243,7 +243,6 @@ tr:last-child td { border-bottom:none; }
           <select id="fDept">
             <option value="">Select department…</option>
             <option value="ADMIN">Administration</option>
-            <option value="ADMIN">Admin</option>
             <option value="BUREAU">Bureau</option>
             <option value="CARD PUNCHING">Card Punching</option>
             <option value="LAMINATION">Lamination</option>
@@ -269,8 +268,20 @@ tr:last-child td { border-bottom:none; }
         <div class="field"><label>Issued by — signature<span class="req">*</span></label><div class="sig-wrap" id="wrapIssueSigBy"><canvas id="issueSigByCanvas"></canvas><button type="button" class="sig-clear" id="issueSigByClear">Clear</button></div></div>
         <div class="field"><label>Recipient — signature<span class="req">*</span></label><div class="sig-wrap" id="wrapIssueSigRec"><canvas id="issueSigRecCanvas"></canvas><button type="button" class="sig-clear" id="issueSigRecClear">Clear</button></div></div>
       </div>
+       <!-- Department-key mismatch warning -->
+      <div class="dept-mismatch-banner" id="deptMismatchBanner" role="alert">
+        <svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4m0 4h.01"/></svg>
+        <span id="deptMismatchMsg"></span>
+      </div>
+
       <div class="form-grid-2">
-        <div class="field"><label for="fKey">Select key<span class="req">*</span></label><select id="fKey"></select></div>
+        <div class="field">
+          <label for="fKey">Select key<span class="req">*</span></label>
+          <select id="fKey">
+            <option value="">Select a department first…</option>
+          </select>
+          <div class="key-hint" id="keyHint"></div>
+        </div>
         <div class="field"><button class="btn btn-primary" id="issueBtn"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor"/></svg>Issue key</button></div>
       </div>
     </div>
@@ -340,31 +351,19 @@ const API_BASE = '';
    Keys in multiple departments appear in each relevant entry.
    ═══════════════════════════════════════════════════════════════ */
 const DEPT_KEY_MAP = {
-  "ADMIN":                       ["GAC 2"],
-  "ADMIN/MAINTENANCE":           ["OU 3", "B12", "LDM 1"],
-  "ADMIN/MAINTENANCE/IT/MID":    ["BC 2"],
-  "BUREAU":                      ["PLPS 3", "BMX 61 FIN", "BMX 60", "BMX 61 FUL", "M/E QC 4", "DG", "BC 1"],
-  "CARD PUNCHING":               ["VS 4", "PM 1", "PM 2", "PC 1"],
-  "IT/MID":                      ["B61", "B61(2)", "BGKS RIGHT", "QC LAB", "QC LAB(2)", "QC LAB(3)"],
-  "LAMINATION":                  ["HSM 1", "LAM 7", "LAM 4", "OFD 1"],
-  "MAINTENANCE":                 ["MGMC", "OU 1", "OU 2", "ESM", "MG 1", "CMGP 1"],
+  "ADMIN":                       ["GAK", "B12", "LDM 1", "LBEG", "CSM", "LBM", "CPS"],
+  "BUREAU":                      ["BMX 61 FIN", "BMX 60", "BMX 61 FUL", "MEQC 4", "DG", "BC 1", "BC 2"],
+  "CARD PUNCHING":               ["PM 1", "PM 2", "PC 1", "PC 2", "HSM 1"],
+  "LAMINATION":                  ["LAM 4", "LAM 5", "LAM 6", "LAM 7"],
+  "MAINTENANCE":                 ["MGMC", "OU 1", "OU 2", "OU 3", "OU 4", "ESM", "MG 1", "CMGP 1", "PAMG 1", "MGT", "B12", "G 3", "LDM 1", "RB", "CPS", "LBEG", "GAK", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM", "DT"],
   "MILLING AND EMBEDDING":       ["KMR 1"],
-  "MILLING AND EMBEDDING/ QC":   ["BGKF LEFT"],
-  "OFFSET":                      ["PC 2", "LAM 5", "OICP"],
-  "PAC":                         ["PMC 3", "MEC 4", "PAC 1", "PAC 2", "PAC 3", "DT", "OICO"],
-  "PAC/STORES":                  ["MSR", "VS 1", "VS 2", "VS 3"],
-  "PACKAGING":                   ["SCR KR 1"],
-  "PRE-PRESS":                   ["PAC 4", "PPL 1", "PPL 2", "PPL 3", "PLPS 1", "PLPS 2"],
-  "PRE PRESS/STORES":            ["LBEG"],
-  "PUNCHING":                    ["SM52"],
-  "QC":                          ["SCR CS 4", "GAC 1"],
-  "SECURITY":                    ["B61(4)", "SCR KR", "BMX 61", "BGKF RIGHT", "BPC 3", "SCR CS 1", "SCR CS 2", "SCR CS 3", "BR-R75", "BGKS LEFT"],
-  "SECURITY & RISK":             ["CPS"],
-  "SECURITY/MAINTENANCE":        ["VMC G", "MGT", "RB", "GAK", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM"],
-  "SECURITY/MID":                ["PAMG 1"],
-  "SECURITY/MTN":                ["G 3"],
-  "STORES":                      ["VAT P", "VAT S"],
-  "VAULT ROOM":                  ["LAM 6", "VMC B"]
+  "OFFSET":                      ["SM52", "OFD 1", "OICO"],
+  "PAC":                         ["OICP", "MEC 4", "PAC 1", "PAC 2", "PAC 3", "PAC 4", "VAT P", "VS 1", "VS 2", "VS 3", "VS 4"],
+  "PACKAGING":                   ["PMC 3", "BPC 3"],
+  "PRE-PRESS":                   ["PPL 1", "PPL 2", "PPL 3", "PLPS 1", "PLPS 2", "PLPS 3"],
+  "QC":                          ["GAC 1", "GAC 2"],
+  "SECURITY":                    ["SCR CS 1", "SCR CS 2", "SCR CS 3", "CS 4","BGKS RIGHT", "BGKS LEFT", "BGKF RIGHT", "BGKF LEFT", "MGMC", "PAMG 1", "MGT", "G3", "RB", "CPS", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM"],
+  "STORES":                      ["VAT S", "VMC B", "ESM", "LBEG", "GAK", "LBM", "VS 1", "VS 2", "VS 3", "VS 4", "B12"]
 };
 
 /* All unique key IDs from the master list */
@@ -948,19 +947,122 @@ function stats() {
   document.getElementById('sRevoked').textContent = revoked.length;
 }
 
-/* ── Key Selector ────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   KEY SELECTOR  — filtered by selected department
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Returns the list of key IDs allowed for a given department.
+ * Falls back to all available keys from the server if dept has no mapping.
+ */
+function getKeysForDept(dept) {
+  if (!dept) return null; // no dept selected
+  return DEPT_KEY_MAP[dept] || null;
+}
+
+/**
+ * Re-populates the key <select> based on:
+ *   1. The currently selected department (DEPT_KEY_MAP filter)
+ *   2. Which keys are actually available (not currently issued/revoked) from the server
+ * Also updates the hint text and mismatch banner.
+ */
 async function populateSel() {
+  const dept = document.getElementById('fDept').value;
+  const sel = document.getElementById('fKey');
+  const hint = document.getElementById('keyHint');
+  const banner = document.getElementById('deptMismatchBanner');
+  const bannerMsg = document.getElementById('deptMismatchMsg');
+
+  // Hide banner by default
+  banner.classList.remove('show');
+  hint.className = 'key-hint';
+  hint.textContent = '';
+
+  if (!dept) {
+    sel.innerHTML = '<option value="">Select a department first…</option>';
+    return;
+  }
+
+  let availableFromServer = [];
   try {
-    const avail = await apiGet('/api/keys/available');
-    const sel = document.getElementById('fKey');
-    if (!sel) return;
-    sel.innerHTML = avail.length
-      ? avail.map(k => '<option value="' + escapeHtml(k) + '">' + escapeHtml(k) + '</option>').join('')
-      : '<option value="">No keys available</option>';
+    availableFromServer = await apiGet('/api/keys/available');
   } catch (err) {
     toast('Failed to load available keys', 'error');
+    sel.innerHTML = '<option value="">Error loading keys</option>';
+    return;
+  }
+
+  const deptKeys = getKeysForDept(dept); // null = dept not in map (show all)
+
+  if (!deptKeys) {
+    // Department not in master map — show all server-available keys with a note
+    if (availableFromServer.length) {
+      sel.innerHTML = availableFromServer.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+      hint.className = 'key-hint';
+      hint.textContent = availableFromServer.length + ' key(s) available';
+    } else {
+      sel.innerHTML = '<option value="">No keys available</option>';
+    }
+    return;
+  }
+
+  // Filter: only keys both in this dept's allowed list AND available on server
+  const deptAvailable = deptKeys.filter(k => availableFromServer.includes(k));
+  // Keys in dept's list but currently issued/unavailable
+  const deptUnavailable = deptKeys.filter(k => !availableFromServer.includes(k));
+
+  if (deptAvailable.length > 0) {
+    sel.innerHTML = deptAvailable.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+    hint.className = 'key-hint info';
+    const totalForDept = deptKeys.length;
+    hint.textContent = deptAvailable.length + ' of ' + totalForDept + ' department key(s) available';
+    if (deptUnavailable.length > 0) {
+      hint.textContent += ' (' + deptUnavailable.length + ' currently issued/unavailable)';
+    }
+  } else {
+    // No dept keys available — check if there are any at all
+    sel.innerHTML = '<option value="">No keys available for this department</option>';
+    hint.className = 'key-hint warn';
+    if (deptKeys.length > 0) {
+      hint.textContent = 'All ' + deptKeys.length + ' key(s) for this department are currently issued or unavailable.';
+    } else {
+      hint.textContent = 'No keys are assigned to this department.';
+    }
   }
 }
+
+/**
+ * Validates that the selected key actually belongs to the chosen department.
+ * Shows a warning banner if the key is outside the department's allowed list.
+ * Returns true if valid (or if we can't determine), false if clearly mismatched.
+ */
+function validateKeyDeptMatch(dept, keyId) {
+  const banner = document.getElementById('deptMismatchBanner');
+  const bannerMsg = document.getElementById('deptMismatchMsg');
+  if (!dept || !keyId) { banner.classList.remove('show'); return true; }
+  const deptKeys = getKeysForDept(dept);
+  if (!deptKeys) { banner.classList.remove('show'); return true; } // dept not mapped, no restriction
+  if (!deptKeys.includes(keyId)) {
+    bannerMsg.textContent = 'Key "' + keyId + '" is not assigned to the ' + dept + ' department. Please select a key from the list above, or change the department.';
+    banner.classList.add('show');
+    return false;
+  }
+  banner.classList.remove('show');
+  return true;
+}
+
+/* Listen for department change → re-filter keys */
+document.getElementById('fDept').addEventListener('change', () => {
+  document.getElementById('deptMismatchBanner').classList.remove('show');
+  populateSel();
+});
+
+/* Listen for key change → validate match */
+document.getElementById('fKey').addEventListener('change', () => {
+  const dept = document.getElementById('fDept').value;
+  const keyId = document.getElementById('fKey').value;
+  validateKeyDeptMatch(dept, keyId);
+});
 
 /* ── Filter & Search ─────────────────────────────────────────── */
 function filtered() {
