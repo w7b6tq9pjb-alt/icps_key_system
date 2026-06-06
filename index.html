@@ -252,13 +252,10 @@ tr:last-child td { border-bottom:none; }
             <option value="PAC">PAC</option>
             <option value="PACKAGING">Packaging</option>
             <option value="PRE-PRESS">Pre-Press</option>
-            <option value="PUNCHING">Punching</option>
             <option value="QC">Quality Control (QC)</option>
             <option value="SECURITY">Security</option>
             <option value="STORES">Stores</option>
             <option value="PROCUREMENT">Procurement</option>
-            <option value="IT">IT</option>  
-            <option value="HR">HR</option>
           </select>
         </div>
         <div class="field"><label for="fRec">Recipient<span class="req">*</span></label><input id="fRec" placeholder="Recipient name" autocomplete="off" /></div>
@@ -355,15 +352,16 @@ const DEPT_KEY_MAP = {
   "BUREAU":                      ["BMX 61 FIN", "BMX 60", "BMX 61 FUL", "MEQC 4", "DG", "BC 1", "BC 2"],
   "CARD PUNCHING":               ["PM 1", "PM 2", "PC 1", "PC 2", "HSM 1"],
   "LAMINATION":                  ["LAM 4", "LAM 5", "LAM 6", "LAM 7"],
-  "MAINTENANCE":                 ["MGMC", "OU 1", "OU 2", "OU 3", "OU 4", "ESM", "MG 1", "CMGP 1", "PAMG 1", "MGT", "B12", "G 3", "LDM 1", "RB", "CPS", "LBEG", "GAK", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM", "DT"],
+  "MAINTENANCE":                 ["MGMC", "OU 1", "OU 2", "OU 3", "OU 4", "ESM", "MG 1", "CMGP 1", "PAMG 1", "MGT", "B12", "G3", "LDM 1", "RB", "CPS", "LBEG", "GAK", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM", "DT"],
   "MILLING AND EMBEDDING":       ["KMR 1"],
   "OFFSET":                      ["SM52", "OFD 1", "OICO"],
   "PAC":                         ["OICP", "MEC 4", "PAC 1", "PAC 2", "PAC 3", "PAC 4", "VAT P", "VS 1", "VS 2", "VS 3", "VS 4"],
   "PACKAGING":                   ["PMC 3", "BPC 3"],
   "PRE-PRESS":                   ["PPL 1", "PPL 2", "PPL 3", "PLPS 1", "PLPS 2", "PLPS 3"],
   "QC":                          ["GAC 1", "GAC 2"],
-  "SECURITY":                    ["SCR CS 1", "SCR CS 2", "SCR CS 3", "CS 4","BGKS RIGHT", "BGKS LEFT", "BGKF RIGHT", "BGKF LEFT", "MGMC", "PAMG 1", "MGT", "G3", "RB", "CPS", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM"],
-  "STORES":                      ["VAT S", "VMC B", "ESM", "LBEG", "GAK", "LBM", "VS 1", "VS 2", "VS 3", "VS 4", "B12"]
+  "SECURITY":                    ["SCR CS 1", "SCR CS 2", "SCR CS 3", "SCR CS 4","BGKS RIGHT", "BGKS LEFT", "BGKF RIGHT", "BGKF LEFT", "MGMC", "PAMG 1", "MGT", "G3", "RB", "CPS", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM"],
+  "STORES":                      ["VAT S", "VMC B", "ESM", "LBEG", "GAK", "LBM", "VS 1", "VS 2", "VS 3", "VS 4", "B12"],
+  "PROCUREMENT":                 ["GAK", "ESM", "LBM", "LBEG"]
 };
 
 /* All unique key IDs from the master list */
