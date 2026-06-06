@@ -144,7 +144,7 @@ tr:last-child td { border-bottom:none; }
 .settings-toggle:hover { color:var(--accent); }
 .settings-panel { background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:1rem; margin-bottom:1rem; display:none; }
 .settings-panel.show { display:block; }
-@media (max-width:700px) { .form-grid-4 { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:900px) { .form-grid-4 { grid-template-columns:repeat(2,1fr); } }
 @media (max-width:768px) { .stats { grid-template-columns:repeat(2,1fr); } .form-grid-3 { grid-template-columns:1fr; } .form-grid-2 { grid-template-columns:1fr; } .form-grid-4 { grid-template-columns:1fr; } .toolbar { flex-direction:column; align-items:stretch; } .search-wrap { min-width:auto; } .filter-row { justify-content:center; } th,td { padding:10px 8px; font-size:0.75rem; } .c-ac { width:100px; } }
 @media (max-width:480px) { #app { padding:1rem; } .stats { grid-template-columns:1fr; } .header { flex-direction:column; align-items:flex-start; gap:8px; } .modal-overlay { padding:1rem 0.5rem; } }
 @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
@@ -152,6 +152,13 @@ tr:last-child td { border-bottom:none; }
 .panel:nth-child(2) { animation-delay:0.05s; }
 .panel:nth-child(3) { animation-delay:0.1s; }
 @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+
+.key-hint { font-size:0.6875rem; margin-top:4px; font-weight:500; }
+.key-hint.info { color:var(--text-tertiary); }
+.key-hint.warn { color:var(--warning); }
+.dept-mismatch-banner { display:none; align-items:center; gap:8px; background:var(--warning-bg); border:1px solid #FDE68A; border-radius:var(--radius-md); padding:10px 14px; font-size:0.8125rem; color:var(--warning); font-weight:500; margin-bottom:12px; }
+.dept-mismatch-banner.show { display:flex; }
+
 </style>
 </head>
 <body>
@@ -166,7 +173,7 @@ tr:last-child td { border-bottom:none; }
       </div>
       <div>
         <div class="header-title">Key Issuance System</div>
-        <div class="header-sub">ICPS — Key access management</div>
+        <div class="header-sub">ICPS — physical access management</div>
       </div>
     </div>
     <div class="date-stamp" id="dateStamp" aria-label="Current date"></div>
@@ -238,25 +245,8 @@ tr:last-child td { border-bottom:none; }
     <div class="panel-body">
       <div class="form-grid-4">
         <div class="field"><label for="fBy">Issued by<span class="req">*</span></label><input id="fBy" placeholder="Staff name" autocomplete="off" /></div>
-        <div class="field">
-          <label for="fDept">Department<span class="req">*</span></label>
-          <select id="fDept">
-            <option value="">Select department…</option>
-            <option value="ADMIN">Administration</option>
-            <option value="BUREAU">Bureau</option>
-            <option value="CARD PUNCHING">Card Punching</option>
-            <option value="LAMINATION">Lamination</option>
-            <option value="MAINTENANCE">Maintenance</option>
-            <option value="MILLING AND EMBEDDING">Milling and Embedding</option>
-            <option value="OFFSET">Offset</option>
-            <option value="PAC">PAC</option>
-            <option value="PACKAGING">Packaging</option>
-            <option value="PRE-PRESS">Pre-Press</option>
-            <option value="QC">Quality Control (QC)</option>
-            <option value="SECURITY">Security</option>
-            <option value="STORES">Stores</option>
-            <option value="PROCUREMENT">Procurement</option>
-          </select>
+        <div class="field"><label for="fDept">Department<span class="req">*</span></label>
+          <select id="fDept"><option value="">Select department…</option><option value="Offset">Offset</option><option value="Flexo">Flexo</option><option value="Silkscreen">Silkscreen</option><option value="Lamination">Lamination</option><option value="Collation">Collation</option><option value="Punching">Punching</option><option value="Stores">Stores</option><option value="Maintenance">Maintenance</option><option value="Security & Risk">Security & Risk</option><option value="Bureau">Bureau</option><option value="M & E">M & E</option><option value="Prepress">Prepress</option><option value="Packaging">Packaging</option><option value="Quality & Control">Quality & Control</option><option value="Administration">Administration</option><option value="IT">IT</option><option value="HR">HR</option><option value="Finance">Finance</option></select>
         </div>
         <div class="field"><label for="fRec">Recipient<span class="req">*</span></label><input id="fRec" placeholder="Recipient name" autocomplete="off" /></div>
         <div class="field"><label for="fPur">Purpose<span class="req">*</span></label><input id="fPur" placeholder="Reason for key" autocomplete="off" /></div>
@@ -265,18 +255,14 @@ tr:last-child td { border-bottom:none; }
         <div class="field"><label>Issued by — signature<span class="req">*</span></label><div class="sig-wrap" id="wrapIssueSigBy"><canvas id="issueSigByCanvas"></canvas><button type="button" class="sig-clear" id="issueSigByClear">Clear</button></div></div>
         <div class="field"><label>Recipient — signature<span class="req">*</span></label><div class="sig-wrap" id="wrapIssueSigRec"><canvas id="issueSigRecCanvas"></canvas><button type="button" class="sig-clear" id="issueSigRecClear">Clear</button></div></div>
       </div>
-       <!-- Department-key mismatch warning -->
-      <div class="dept-mismatch-banner" id="deptMismatchBanner" role="alert">
+      <div id="deptMismatchBanner" class="dept-mismatch-banner" role="alert">
         <svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4m0 4h.01"/></svg>
         <span id="deptMismatchMsg"></span>
       </div>
-
       <div class="form-grid-2">
         <div class="field">
           <label for="fKey">Select key<span class="req">*</span></label>
-          <select id="fKey">
-            <option value="">Select a department first…</option>
-          </select>
+          <select id="fKey"><option value="">Select a department first…</option></select>
           <div class="key-hint" id="keyHint"></div>
         </div>
         <div class="field"><button class="btn btn-primary" id="issueBtn"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor"/></svg>Issue key</button></div>
@@ -343,41 +329,30 @@ tr:last-child td { border-bottom:none; }
 const API_BASE = '';
 
 /* ═══════════════════════════════════════════════════════════════
-   DEPARTMENT → KEY MAP  (sourced from KEYS.xlsx)
-   Maps each department to the list of key IDs it can access.
-   Keys in multiple departments appear in each relevant entry.
+   DEPARTMENT → KEY MAP
+   Maps each department to its allowed key IDs.
    ═══════════════════════════════════════════════════════════════ */
 const DEPT_KEY_MAP = {
-  "ADMIN":                       ["GAK", "B12", "LDM 1", "LBEG", "CSM", "LBM", "CPS"],
-  "BUREAU":                      ["BMX 61 FIN", "BMX 60", "BMX 61 FUL", "MEQC 4", "DG", "BC 1", "BC 2"],
-  "CARD PUNCHING":               ["PM 1", "PM 2", "PC 1", "PC 2", "HSM 1"],
-  "LAMINATION":                  ["LAM 4", "LAM 5", "LAM 6", "LAM 7"],
-  "MAINTENANCE":                 ["MGMC", "OU 1", "OU 2", "OU 3", "OU 4", "ESM", "MG 1", "CMGP 1", "PAMG 1", "MGT", "B12", "G3", "LDM 1", "RB", "CPS", "LBEG", "GAK", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM", "DT"],
-  "MILLING AND EMBEDDING":       ["KMR 1"],
-  "OFFSET":                      ["SM52", "OFD 1", "OICO"],
-  "PAC":                         ["OICP", "MEC 4", "PAC 1", "PAC 2", "PAC 3", "PAC 4", "VAT P", "VS 1", "VS 2", "VS 3", "VS 4"],
-  "PACKAGING":                   ["PMC 3", "BPC 3"],
-  "PRE-PRESS":                   ["PPL 1", "PPL 2", "PPL 3", "PLPS 1", "PLPS 2", "PLPS 3"],
-  "QC":                          ["GAC 1", "GAC 2"],
-  "SECURITY":                    ["SCR CS 1", "SCR CS 2", "SCR CS 3", "SCR CS 4","BGKS RIGHT", "BGKS LEFT", "BGKF RIGHT", "BGKF LEFT", "MGMC", "PAMG 1", "MGT", "G3", "RB", "CPS", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM"],
-  "STORES":                      ["VAT S", "VMC B", "ESM", "LBEG", "GAK", "LBM", "VS 1", "VS 2", "VS 3", "VS 4", "B12"],
-  "PROCUREMENT":                 ["GAK", "ESM", "LBM", "LBEG"]
+  "Administration":    ["GAK", "B12", "LDM 1", "LBEG", "CSM", "LBM", "CPS"],
+  "Bureau":            ["BMX 61 FIN", "BMX 60", "BMX 61 FUL", "MEQC 4", "DG", "BC 1", "BC 2"],
+  "Punching":          ["PM 1", "PM 2", "PC 1", "PC 2", "HSM 1"],
+  "Lamination":        ["LAM 4", "LAM 5", "LAM 6", "LAM 7"],
+  "Maintenance":       ["MGMC", "OU 1", "OU 2", "OU 3", "OU 4", "ESM", "MG 1", "CMGP 1", "PAMG 1", "MGT", "B12", "G3", "LDM 1", "RB", "CPS", "LBEG", "GAK", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM", "DT"],
+  "M & E":             ["KMR 1"],
+  "Offset":            ["SM52", "OFD 1", "OICO"],
+  "Flexo":             ["OICP", "MEC 4", "PAC 1", "PAC 2", "PAC 3", "PAC 4", "VAT P", "VS 1", "VS 2", "VS 3", "VS 4"],
+  "Packaging":         ["PMC 3", "BPC 3"],
+  "Prepress":          ["PPL 1", "PPL 2", "PPL 3", "PLPS 1", "PLPS 2", "PLPS 3"],
+  "Quality & Control": ["GAC 1", "GAC 2"],
+  "Security & Risk":   ["SCR CS 1", "SCR CS 2", "SCR CS 3", "SCR CS 4", "BGKS RIGHT", "BGKS LEFT", "BGKF RIGHT", "BGKF LEFT", "MGMC", "PAMG 1", "MGT", "G3", "RB", "CPS", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM"],
+  "Stores":            ["VAT S", "VMC B", "ESM", "LBEG", "GAK", "LBM", "VS 1", "VS 2", "VS 3", "VS 4", "B12"],
+  "Collation":         ["GAK", "ESM", "LBM", "LBEG"],
+  "Silkscreen":        ["SM52", "OFD 1"],
+  "HR":                ["GAK", "LBM", "CSM"],
+  "Finance":           ["GAK", "LBM", "CSM"],
+  "IT":                ["GAK", "LBM", "CSM"]
 };
 
-/* All unique key IDs from the master list */
-const ALL_KEYS_MASTER = [
-  "B61","B61(2)","B61(4)","SCR KR","SCR KR 1","PMC 3","KMR 1","MEC 4",
-  "PAC 1","PAC 2","PAC 3","PAC 4","PPL 1","PPL 2","PPL 3","PLPS 1","PLPS 2","PLPS 3",
-  "BMX 61 FIN","BMX 60","BMX 61 FUL","BMX 61","BGKF RIGHT","BGKF LEFT","M/E QC 4",
-  "BPC 3","SCR CS 1","SCR CS 2","SCR CS 3","SCR CS 4","GAC 1","GAC 2",
-  "BR-R75","BGKS LEFT","BGKS RIGHT","QC LAB","QC LAB(2)","QC LAB(3)",
-  "MSR","VS 1","VS 2","VS 3","VS 4","PM 1","PM 2","PC 1","PC 2",
-  "SM52","HSM 1","LAM 7","LAM 4","LAM 5","OFD 1","LAM 6",
-  "VMC B","VMC G","MGMC","OU 1","OU 2","OU 3","ESM","MG 1","CMGP 1",
-  "PAMG 1","MGT","B12","G 3","LDM 1","RB","CPS","LBEG",
-  "DG","BC 1","BC 2","GAK","7A","7B","7C","7D","CSM","WAF","LBM",
-  "DT","OICP","OICO","VAT P","VAT S"
-];
 
 /* ── User Session & RBAC ─────────────────────────────────────── */
 const USER_SESSION_KEY = 'icps_user_session';
@@ -390,7 +365,7 @@ function getSession() {
   return null;
 }
 
-// Redirect to login if no session
+// Redirect to login if no valid session
 const _session = getSession();
 if (!_session) {
   window.location.replace('login.html');
@@ -399,55 +374,43 @@ if (!_session) {
 
 const CURRENT_USER = _session;
 const IS_ADMIN = CURRENT_USER.role === 'admin';
-// Security can: issue key, view dashboard (stats), view issued keys table (no export)
-// Admin: full access
 
 function applyRBAC() {
-  // --- Header: show logged-in user + logout ---
   const headerEl = document.querySelector('.header');
   if (headerEl) {
     const userBar = document.createElement('div');
     userBar.id = 'userBar';
-    userBar.style.cssText = 'display:flex;align-items:center;gap:10px;margin-left:12px;';
+    userBar.style.cssText = 'display:flex;align-items:center;gap:10px;margin-left:12px;flex-shrink:0;';
     userBar.innerHTML = `
-      <div style="display:flex;align-items:center;gap:8px;background:rgba(30,58,95,0.15);border:1px solid rgba(30,58,95,0.2);border-radius:20px;padding:5px 12px 5px 8px;">
+      <div style="display:flex;align-items:center;gap:8px;background:rgba(30,58,95,0.08);border:1px solid rgba(30,58,95,0.15);border-radius:20px;padding:5px 12px 5px 8px;">
         <div style="width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          <svg style="width:13px;height:13px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#fff"/><path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="#fff"/></svg>
+          <svg style="width:13px;height:13px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#fff"/><path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="#fff"/></svg>
         </div>
         <div>
           <div style="font-size:0.75rem;font-weight:700;color:var(--text-primary);line-height:1.1;">${escapeHtml(CURRENT_USER.name)}</div>
-          <div style="font-size:0.625rem;color:var(--text-tertiary);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;">${IS_ADMIN ? 'Administrator' : 'Security Personnel'}</div>
+          <div style="font-size:0.6rem;color:var(--text-tertiary);font-weight:600;letter-spacing:0.05em;text-transform:uppercase;">${IS_ADMIN ? 'Administrator' : 'Security Personnel'}</div>
         </div>
       </div>
-      <button onclick="logoutUser()" style="display:flex;align-items:center;gap:5px;padding:6px 11px;font-size:0.75rem;font-weight:600;border:1px solid var(--border);border-radius:var(--radius-md);background:transparent;color:var(--text-secondary);cursor:pointer;font-family:inherit;transition:var(--transition);" onmouseover="this.style.background='var(--danger-bg)';this.style.color='var(--danger)';this.style.borderColor='#FECACA'" onmouseout="this.style.background='transparent';this.style.color='var(--text-secondary)';this.style.borderColor='var(--border)'">
-        <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      <button onclick="logoutUser()" style="display:flex;align-items:center;gap:5px;padding:6px 11px;font-size:0.75rem;font-weight:600;border:1px solid var(--border);border-radius:var(--radius-md);background:transparent;color:var(--text-secondary);cursor:pointer;font-family:inherit;transition:var(--transition);" onmouseover="this.style.background=\'var(--danger-bg)\';this.style.color=\'var(--danger)\';this.style.borderColor=\'#FECACA\';" onmouseout="this.style.background=\'transparent\';this.style.color=\'var(--text-secondary)\';this.style.borderColor=\'var(--border)\';">
+        <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
         Sign out
       </button>`;
     headerEl.appendChild(userBar);
   }
 
   if (!IS_ADMIN) {
-    // Hide: Add New Key panel
     const addKeyPanel = document.getElementById('addKeyPanel');
     if (addKeyPanel) addKeyPanel.style.display = 'none';
-
-    // Hide: Settings toggle
     const settingsToggle = document.getElementById('settingsToggle');
     if (settingsToggle) settingsToggle.style.display = 'none';
     const settingsPanel = document.getElementById('settingsPanel');
     if (settingsPanel) settingsPanel.style.display = 'none';
-
-    // Hide: Archive toggle button
     const archiveToggle = document.getElementById('archiveToggle');
     if (archiveToggle) archiveToggle.style.display = 'none';
     const archivePanel = document.getElementById('archivePanel');
     if (archivePanel) archivePanel.style.display = 'none';
-
-    // Hide: Export CSV button
     const csvBtn = document.getElementById('csvBtn');
     if (csvBtn) csvBtn.style.display = 'none';
-
-    // Hide: Action buttons (Return/Revoke) in table — handled via render overrides below
   }
 }
 
@@ -945,36 +908,17 @@ function stats() {
   document.getElementById('sRevoked').textContent = revoked.length;
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   KEY SELECTOR  — filtered by selected department
-   ═══════════════════════════════════════════════════════════════ */
-
-/**
- * Returns the list of key IDs allowed for a given department.
- * Falls back to all available keys from the server if dept has no mapping.
- */
-function getKeysForDept(dept) {
-  if (!dept) return null; // no dept selected
-  return DEPT_KEY_MAP[dept] || null;
-}
-
-/**
- * Re-populates the key <select> based on:
- *   1. The currently selected department (DEPT_KEY_MAP filter)
- *   2. Which keys are actually available (not currently issued/revoked) from the server
- * Also updates the hint text and mismatch banner.
- */
+/* ── Key Selector (department-filtered) ──────────────────────── */
 async function populateSel() {
-  const dept = document.getElementById('fDept').value;
+  const dept = document.getElementById('fDept') ? document.getElementById('fDept').value : '';
   const sel = document.getElementById('fKey');
   const hint = document.getElementById('keyHint');
   const banner = document.getElementById('deptMismatchBanner');
-  const bannerMsg = document.getElementById('deptMismatchMsg');
+  if (!sel) return;
 
-  // Hide banner by default
-  banner.classList.remove('show');
-  hint.className = 'key-hint';
-  hint.textContent = '';
+  // Reset hint/banner
+  if (hint) { hint.className = 'key-hint'; hint.textContent = ''; }
+  if (banner) banner.classList.remove('show');
 
   if (!dept) {
     sel.innerHTML = '<option value="">Select a department first…</option>';
@@ -990,58 +934,46 @@ async function populateSel() {
     return;
   }
 
-  const deptKeys = getKeysForDept(dept); // null = dept not in map (show all)
+  const deptKeys = DEPT_KEY_MAP[dept] || null;
 
   if (!deptKeys) {
-    // Department not in master map — show all server-available keys with a note
-    if (availableFromServer.length) {
-      sel.innerHTML = availableFromServer.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
-      hint.className = 'key-hint';
-      hint.textContent = availableFromServer.length + ' key(s) available';
-    } else {
-      sel.innerHTML = '<option value="">No keys available</option>';
-    }
+    // Dept not in map — show all server-available keys
+    sel.innerHTML = availableFromServer.length
+      ? availableFromServer.map(k => '<option value="' + escapeHtml(k) + '">' + escapeHtml(k) + '</option>').join('')
+      : '<option value="">No keys available</option>';
+    if (hint) { hint.className = 'key-hint info'; hint.textContent = availableFromServer.length + ' key(s) available'; }
     return;
   }
 
-  // Filter: only keys both in this dept's allowed list AND available on server
-  const deptAvailable = deptKeys.filter(k => availableFromServer.includes(k));
-  // Keys in dept's list but currently issued/unavailable
+  const deptAvailable   = deptKeys.filter(k => availableFromServer.includes(k));
   const deptUnavailable = deptKeys.filter(k => !availableFromServer.includes(k));
 
   if (deptAvailable.length > 0) {
-    sel.innerHTML = deptAvailable.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
-    hint.className = 'key-hint info';
-    const totalForDept = deptKeys.length;
-    hint.textContent = deptAvailable.length + ' of ' + totalForDept + ' department key(s) available';
-    if (deptUnavailable.length > 0) {
-      hint.textContent += ' (' + deptUnavailable.length + ' currently issued/unavailable)';
+    sel.innerHTML = deptAvailable.map(k => '<option value="' + escapeHtml(k) + '">' + escapeHtml(k) + '</option>').join('');
+    if (hint) {
+      hint.className = 'key-hint info';
+      hint.textContent = deptAvailable.length + ' of ' + deptKeys.length + ' key(s) available';
+      if (deptUnavailable.length > 0) hint.textContent += ' (' + deptUnavailable.length + ' currently issued)';
     }
   } else {
-    // No dept keys available — check if there are any at all
     sel.innerHTML = '<option value="">No keys available for this department</option>';
-    hint.className = 'key-hint warn';
-    if (deptKeys.length > 0) {
-      hint.textContent = 'All ' + deptKeys.length + ' key(s) for this department are currently issued or unavailable.';
-    } else {
-      hint.textContent = 'No keys are assigned to this department.';
+    if (hint) {
+      hint.className = 'key-hint warn';
+      hint.textContent = deptKeys.length > 0
+        ? 'All ' + deptKeys.length + ' key(s) for this department are currently issued or unavailable.'
+        : 'No keys assigned to this department.';
     }
   }
 }
 
-/**
- * Validates that the selected key actually belongs to the chosen department.
- * Shows a warning banner if the key is outside the department's allowed list.
- * Returns true if valid (or if we can't determine), false if clearly mismatched.
- */
 function validateKeyDeptMatch(dept, keyId) {
   const banner = document.getElementById('deptMismatchBanner');
   const bannerMsg = document.getElementById('deptMismatchMsg');
-  if (!dept || !keyId) { banner.classList.remove('show'); return true; }
-  const deptKeys = getKeysForDept(dept);
-  if (!deptKeys) { banner.classList.remove('show'); return true; } // dept not mapped, no restriction
+  if (!dept || !keyId || !banner) return true;
+  const deptKeys = DEPT_KEY_MAP[dept];
+  if (!deptKeys) { banner.classList.remove('show'); return true; }
   if (!deptKeys.includes(keyId)) {
-    bannerMsg.textContent = 'Key "' + keyId + '" is not assigned to the ' + dept + ' department. Please select a key from the list above, or change the department.';
+    bannerMsg.textContent = 'Key "' + keyId + '" is not assigned to the ' + dept + ' department.';
     banner.classList.add('show');
     return false;
   }
@@ -1049,13 +981,13 @@ function validateKeyDeptMatch(dept, keyId) {
   return true;
 }
 
-/* Listen for department change → re-filter keys */
+/* ── Department → Key wiring ─────────────────────────────────── */
 document.getElementById('fDept').addEventListener('change', () => {
-  document.getElementById('deptMismatchBanner').classList.remove('show');
+  const banner = document.getElementById('deptMismatchBanner');
+  if (banner) banner.classList.remove('show');
   populateSel();
 });
 
-/* Listen for key change → validate match */
 document.getElementById('fKey').addEventListener('change', () => {
   const dept = document.getElementById('fDept').value;
   const keyId = document.getElementById('fKey').value;
@@ -1097,15 +1029,16 @@ function render(options) {
     const dc = r.status === 'Issued' ? 'dot-issued' : r.status === 'Available' ? 'dot-available' : 'dot-revoked';
     let acts = '';
     if (!isArchive) {
-      if (IS_ADMIN) {
-        if (r.status === 'Issued') {
-          acts += '<button class="act ret" data-action="return" data-idx="' + i + '">' + ICONS.return + ' Return</button>';
-        }
-        if (r.status !== 'Revoked') {
-          acts += '<button class="act rev" data-action="revoke" data-idx="' + i + '">' + ICONS.revoke + ' Revoke</button>';
-        }
-      } else {
-        // Security personnel: view only, no actions
+      // Return: Admin and Security Personnel can both return issued keys
+      if (r.status === 'Issued') {
+        acts += '<button class="act ret" data-action="return" data-idx="' + i + '">' + ICONS.return + ' Return</button>';
+      }
+      // Revoke: Admin only
+      if (IS_ADMIN && r.status !== 'Revoked') {
+        acts += '<button class="act rev" data-action="revoke" data-idx="' + i + '">' + ICONS.revoke + ' Revoke</button>';
+      }
+      // Security on non-issued rows: view only
+      if (!IS_ADMIN && r.status !== 'Issued') {
         acts = '<span style="color:var(--text-tertiary);font-size:0.75rem;">View only</span>';
       }
     } else {
