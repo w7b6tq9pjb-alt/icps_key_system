@@ -428,7 +428,7 @@ tr:last-child td { border-bottom:none; }
       <div class="form-grid-4">
         <div class="field"><label for="fBy">Issued by<span class="req">*</span></label><input id="fBy" placeholder="Staff name" autocomplete="off" /></div>
         <div class="field"><label for="fDept">Department<span class="req">*</span></label>
-          <select id="fDept"><option value="">Select department…</option><option value="Offset">Offset</option><option value="Flexo">Flexo</option><option value="Silkscreen">Silkscreen</option><option value="Lamination">Lamination</option><option value="Collation">Collation</option><option value="Punching">Punching</option><option value="Stores">Stores</option><option value="Maintenance">Maintenance</option><option value="Security & Risk">Security & Risk</option><option value="Bureau">Bureau</option><option value="M & E">M & E</option><option value="Prepress">Prepress</option><option value="Packaging">Packaging</option><option value="Quality & Control">Quality & Control</option><option value="Administration">Administration</option><option value="IT">IT</option><option value="HR">HR</option><option value="Finance">Finance</option></select>
+          <select id="fDept"><option value="">Select department…</option><option value="Offset">Offset</option><option value="Lamination">Lamination</option><option value="Punching">Punching</option><option value="Stores">Stores</option><option value="Maintenance">Maintenance</option><option value="Security">Security</option><option value="Bureau">Bureau</option><option value="M & E">M & E</option><option value="Prepress">Prepress</option><option value="Packaging">Packaging</option><option value="Quality & Control">Quality & Control (QC)</option><option value="Administration">Administration</option><option value="IT">IT</option><option value="Procurement">Procurement</option></select>
         </div>
         <div class="field"><label for="fRec">Recipient<span class="req">*</span></label><input id="fRec" placeholder="Recipient name" autocomplete="off" /></div>
         <div class="field"><label for="fPur">Purpose<span class="req">*</span></label><input id="fPur" placeholder="Reason for key" autocomplete="off" /></div>
@@ -564,13 +564,10 @@ const DEPT_KEY_MAP = {
   "Packaging":         ["PMC 3", "BPC 3"],
   "Prepress":          ["PPL 1", "PPL 2", "PPL 3", "PLPS 1", "PLPS 2", "PLPS 3"],
   "Quality & Control": ["GAC 1", "GAC 2"],
-  "Security & Risk":   ["SCR CS 1", "SCR CS 2", "SCR CS 3", "SCR CS 4", "BGKS RIGHT", "BGKS LEFT", "BGKF RIGHT", "BGKF LEFT", "MGMC", "PAMG 1", "MGT", "G3", "RB", "CPS", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM"],
+  "Security":   ["SCR CS 1", "SCR CS 2", "SCR CS 3", "SCR CS 4", "BGKS RIGHT", "BGKS LEFT", "BGKF RIGHT", "BGKF LEFT", "MGMC", "PAMG 1", "MGT", "G3", "RB", "CPS", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM"],
   "Stores":            ["VAT S", "VMC B", "ESM", "LBEG", "GAK", "LBM", "VS 1", "VS 2", "VS 3", "VS 4", "B12"],
-  "Collation":         ["GAK", "ESM", "LBM", "LBEG"],
-  "Silkscreen":        ["SM52", "OFD 1"],
-  "HR":                ["GAK", "LBM", "CSM"],
-  "Finance":           ["GAK", "LBM", "CSM"],
-  "IT":                ["GAK", "LBM", "CSM"]
+  "IT":                ["B61", "B61(2)", "B61(4)", "SCR KR", "SCR KR 1"],
+  "Procurement":       ["ESM", "LBEG", "GAK", "LBM", "CPS"]
 };
 
 
