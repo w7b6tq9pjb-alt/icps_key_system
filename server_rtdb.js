@@ -747,30 +747,73 @@ app.post('/api/export', asyncHandler(async (req, res) => {
 
     if (emailConfig?.smtpHost && emailConfig?.smtpUser && emailConfig?.smtpPass && emailConfig?.recipients) {
       try {
+        const port = parseInt(emailConfig.smtpPort) || 587;
+        const isSecure = port === 465;
+
+        console.log('\n📧 Email Configuration:');
+        console.log('   Host:', emailConfig.smtpHost);
+        console.log('   Port:', port);
+        console.log('   Secure:', isSecure);
+        console.log('   User:', emailConfig.smtpUser);
+        console.log('   Recipients:', emailConfig.recipients);
+
         const transporter = nodemailer.createTransport({
           host: emailConfig.smtpHost,
-          port: parseInt(emailConfig.smtpPort) || 587,
-          secure: parseInt(emailConfig.smtpPort) === 465,
-          auth: { user: emailConfig.smtpUser, pass: emailConfig.smtpPass }
+          port: port,
+          secure: isSecure,
+          requireTLS: !isSecure, // Force STARTTLS for port 587
+          auth: { 
+            user: emailConfig.smtpUser, 
+            pass: emailConfig.smtpPass 
+          },
+          tls: {
+            minVersion: 'TLSv1.2',
+            rejectUnauthorized: true
+          },
+          connectionTimeout: 30000,
+          greetingTimeout: 30000,
+          socketTimeout: 30000,
+          debug: true,
+          logger: true
         });
 
+        // Verify connection before sending
+        console.log('   Verifying SMTP connection...');
+        await transporter.verify();
+        console.log('   ✓ SMTP connection verified');
+
         const recipientList = emailConfig.recipients.split(',').map(r => r.trim()).filter(Boolean);
-        await transporter.sendMail({
+        console.log('   Sending to', recipientList.length, 'recipient(s)...');
+
+        const info = await transporter.sendMail({
           from: `"ICPS Key System" <${emailConfig.smtpUser}>`,
           to: recipientList.join(', '),
           subject: `ICPS Export — ${sourceName} — ${new Date().toLocaleDateString()}`,
-          text: `Records: ${records.length}\nFilter: ${filter || 'all'}\nSearch: ${search || 'none'}\nMonth: ${sourceName}`,
+          text: `Records: ${records.length}\nFilter: ${filter || 'all'}\nSearch: ${search || 'none'}\nMonth: ${sourceName}\n\nExported: ${new Date().toLocaleString()}`,
           attachments: [{ filename, path: filepath }]
         });
-        emailResult = { sent: true, recipients: recipientList.length, error: null };
+
+        console.log('   ✓ Email sent:', info.messageId);
+        emailResult = { sent: true, recipients: recipientList.length, error: null, messageId: info.messageId };
       } catch (err) {
-        emailResult = { sent: false, recipients: 0, error: err.message };
+        console.error('   ✗ Email failed:', err.message);
+        console.error('   Full error:', err);
+        emailResult = { sent: false, recipients: 0, error: err.message, code: err.code };
+      }
+    } else {
+      console.log('\n⚠ Email not configured — CSV only');
+      if (!emailConfig) console.log('   Reason: emailConfig is null');
+      else {
+        if (!emailConfig.smtpHost) console.log('   Missing: smtpHost');
+        if (!emailConfig.smtpUser) console.log('   Missing: smtpUser');
+        if (!emailConfig.smtpPass) console.log('   Missing: smtpPass');
+        if (!emailConfig.recipients) console.log('   Missing: recipients');
       }
     }
 
     res.json({ downloadUrl: `/exports/${filename}`, filename, count: records.length, email: emailResult, month: sourceName });
   } catch (err) {
-    console.error('Error:', err.message);
+    console.error('Export Error:', err.message);
     res.status(500).json({ error: err.message });
   }
 }));

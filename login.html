@@ -16,7 +16,7 @@
   --transition: all 0.22s cubic-bezier(0.4,0,0.2,1);
 
   /* Light Mode (White + Blue + Red) */
-  --bg: #FFFFFF;
+  --bg: #f0ebeb;
   --bg-alt: #F8FAFC;
   --surface: #FFFFFF;
   --surface-hover: #F1F5F9;
@@ -31,7 +31,7 @@
   --primary-soft: rgba(37,99,235,0.08);
   --primary-hover: #1D4ED8;
 
-  --accent: #ffffff;
+  --accent: #c6bbbb;
   --accent-soft: rgba(220,38,38,0.08);
   --accent-glow: rgba(220,38,38,0.15);
 
@@ -44,7 +44,6 @@
   --shadow-input: 0 0 0 3px rgba(37,99,235,0.15);
   --shadow-glow: 0 0 40px rgba(37,99,235,0.08);
 
-  --grid-color: rgba(37,99,235,0.04);
   --glow-primary: rgba(37,99,235,0.12);
   --glow-accent: rgba(220,38,38,0.06);
 }
@@ -79,7 +78,6 @@
   --shadow-input: 0 0 0 3px rgba(59,130,246,0.18);
   --shadow-glow: 0 0 60px rgba(59,130,246,0.15);
 
-  --grid-color: rgba(59,130,246,0.05);
   --glow-primary: rgba(59,130,246,0.18);
   --glow-accent: rgba(245,158,11,0.08);
 }
@@ -105,13 +103,31 @@ body::before {
   content: '';
   position: fixed;
   inset: 0;
-  background-image:
-    linear-gradient(var(--grid-color) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
-  background-size: 40px 40px;
+  background: transparent;
   pointer-events: none;
   z-index: 0;
-  transition: background-image 0.4s ease;
+  transition: background 0.4s ease;
+}
+
+/* ── Background Image (blur yet sharp) ─────────────────────── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url('icps-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(8px) saturate(0.7);
+  transform: scale(1.05); /* prevent blur edge bleed */
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: -1;
+  transition: opacity 0.4s ease;
+}
+[data-theme="dark"] body::after {
+  opacity: 0.08;
+  filter: blur(8px) saturate(0.5) brightness(1.2);
 }
 
 .glow-tl {
@@ -519,6 +535,7 @@ body::before {
   .theme-toggle { top: 12px; right: 12px; }
 }
 </style>
+<base target="_blank">
 <base target="_blank">
 </head>
 <body>
