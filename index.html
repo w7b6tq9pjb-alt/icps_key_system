@@ -417,7 +417,7 @@ tr:last-child td { border-bottom:none; }
       <div class="form-grid-4">
         <div class="field"><label for="fBy">Issued by<span class="req">*</span></label><input id="fBy" placeholder="Staff name" autocomplete="off" /></div>
         <div class="field"><label for="fDept">Department<span class="req">*</span></label>
-          <select id="fDept"><option value="">Select department…</option><option value="Offset">Offset</option><option value="Flexo">Flexo</option><option value="Silkscreen">Silkscreen</option><option value="Lamination">Lamination</option><option value="Collation">Collation</option><option value="Punching">Punching</option><option value="Stores">Stores</option><option value="Maintenance">Maintenance</option><option value="Security & Risk">Security & Risk</option><option value="Bureau">Bureau</option><option value="M & E">M & E</option><option value="Prepress">Prepress</option><option value="Packaging">Packaging</option><option value="Quality & Control">Quality & Control</option><option value="Administration">Administration</option><option value="IT">IT</option><option value="HR">HR</option><option value="Finance">Finance</option></select>
+          <select id="fDept"><option value="">Select department…</option><option value="Offset">Offset</option><option value="Lamination">Lamination</option><option value="Punching">Punching</option><option value="Stores">Stores</option><option value="Maintenance">Maintenance</option><option value="Security">Security</option><option value="Bureau">Bureau</option><option value="M & E">M & E</option><option value="Prepress">Prepress</option><option value="Packaging">Packaging</option><option value="Quality & Control (QC)">Quality & Control (QC)</option><option value="Administration">Administration</option><option value="IT">IT</option></select>
         </div>
         <div class="field"><label for="fRec">Recipient<span class="req">*</span></label><input id="fRec" placeholder="Recipient name" autocomplete="off" /></div>
         <div class="field"><label for="fPur">Purpose<span class="req">*</span></label><input id="fPur" placeholder="Reason for key" autocomplete="off" /></div>
@@ -426,8 +426,19 @@ tr:last-child td { border-bottom:none; }
         <div class="field"><label>Issued by — signature<span class="req">*</span></label><div class="sig-wrap" id="wrapIssueSigBy"><canvas id="issueSigByCanvas"></canvas><button type="button" class="sig-clear" id="issueSigByClear">Clear</button></div></div>
         <div class="field"><label>Recipient — signature<span class="req">*</span></label><div class="sig-wrap" id="wrapIssueSigRec"><canvas id="issueSigRecCanvas"></canvas><button type="button" class="sig-clear" id="issueSigRecClear">Clear</button></div></div>
       </div>
+
+      <div class="dept-mismatch-banner" id="deptMismatchBanner" role="alert">
+        <svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4m0 4h.01"/></svg>
+        <span id="deptMismatchMsg"></span>
+      </div>
+
       <div class="form-grid-2">
-        <div class="field"><label for="fKey">Select key<span class="req">*</span></label><select id="fKey"></select></div>
+        <div class="field">
+          <label for="fKey">Select key<span class="req">*</span></label>
+          <select id="fKey">
+            <option value="">Select a department first…</option>
+          </select>
+          <div class="key-hint" id="keyHint"></div>
         <div class="field"><button class="btn btn-primary" id="issueBtn"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor"/></svg>Issue key</button></div>
       </div>
     </div>
@@ -539,6 +550,20 @@ const DEPT_KEY_MAP = {
   "IT":                ["B61", "B61(2)", "B61(4)", "SCR KR", "SCR KR 1"],
   "Procurement":       ["ESM", "LBEG", "GAK", "LBM", "CPS"]
 };
+
+const ALL_KEYS_MASTER = [
+  "B61","B61(2)","B61(4)","SCR KR","SCR KR 1","PMC 3","KMR 1","MEC 4",
+  "PAC 1","PAC 2","PAC 3","PAC 4","PPL 1","PPL 2","PPL 3","PLPS 1","PLPS 2","PLPS 3",
+  "BMX 61 FIN","BMX 60","BMX 61 FUL","BMX 61","BGKF RIGHT","BGKF LEFT","M/E QC 4",
+  "BPC 3","SCR CS 1","SCR CS 2","SCR CS 3","SCR CS 4","GAC 1","GAC 2",
+  "BR-R75","BGKS LEFT","BGKS RIGHT","QC LAB","QC LAB(2)","QC LAB(3)",
+  "MSR","VS 1","VS 2","VS 3","VS 4","PM 1","PM 2","PC 1","PC 2",
+  "SM52","HSM 1","LAM 7","LAM 4","LAM 5","OFD 1","LAM 6",
+  "VMC B","VMC G","MGMC","OU 1","OU 2","OU 3","ESM","MG 1","CMGP 1",
+  "PAMG 1","MGT","B12","G 3","LDM 1","RB","CPS","LBEG",
+  "DG","BC 1","BC 2","GAK","7A","7B","7C","7D","CSM","WAF","LBM",
+  "DT","OICP","OICO","VAT P","VAT S"
+];
 
 
 
@@ -1098,19 +1123,122 @@ function stats() {
   document.getElementById('sRevoked').textContent = revoked.length;
 }
 
-/* ── Key Selector ────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   KEY SELECTOR  — filtered by selected department
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Returns the list of key IDs allowed for a given department.
+ * Falls back to all available keys from the server if dept has no mapping.
+ */
+function getKeysForDept(dept) {
+  if (!dept) return null; // no dept selected
+  return DEPT_KEY_MAP[dept] || null;
+}
+
+/**
+ * Re-populates the key <select> based on:
+ *   1. The currently selected department (DEPT_KEY_MAP filter)
+ *   2. Which keys are actually available (not currently issued/revoked) from the server
+ * Also updates the hint text and mismatch banner.
+ */
 async function populateSel() {
+  const dept = document.getElementById('fDept').value;
+  const sel = document.getElementById('fKey');
+  const hint = document.getElementById('keyHint');
+  const banner = document.getElementById('deptMismatchBanner');
+  const bannerMsg = document.getElementById('deptMismatchMsg');
+
+  // Hide banner by default
+  banner.classList.remove('show');
+  hint.className = 'key-hint';
+  hint.textContent = '';
+
+  if (!dept) {
+    sel.innerHTML = '<option value="">Select a department first…</option>';
+    return;
+  }
+
+  let availableFromServer = [];
   try {
-    const avail = await apiGet('/api/keys/available');
-    const sel = document.getElementById('fKey');
-    if (!sel) return;
-    sel.innerHTML = avail.length
-      ? avail.map(k => '<option value="' + escapeHtml(k) + '">' + escapeHtml(k) + '</option>').join('')
-      : '<option value="">No keys available</option>';
+    availableFromServer = await apiGet('/api/keys/available');
   } catch (err) {
     toast('Failed to load available keys', 'error');
+    sel.innerHTML = '<option value="">Error loading keys</option>';
+    return;
+  }
+
+  const deptKeys = getKeysForDept(dept); // null = dept not in map (show all)
+
+  if (!deptKeys) {
+    // Department not in master map — show all server-available keys with a note
+    if (availableFromServer.length) {
+      sel.innerHTML = availableFromServer.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+      hint.className = 'key-hint';
+      hint.textContent = availableFromServer.length + ' key(s) available';
+    } else {
+      sel.innerHTML = '<option value="">No keys available</option>';
+    }
+    return;
+  }
+
+  // Filter: only keys both in this dept's allowed list AND available on server
+  const deptAvailable = deptKeys.filter(k => availableFromServer.includes(k));
+  // Keys in dept's list but currently issued/unavailable
+  const deptUnavailable = deptKeys.filter(k => !availableFromServer.includes(k));
+
+  if (deptAvailable.length > 0) {
+    sel.innerHTML = deptAvailable.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+    hint.className = 'key-hint info';
+    const totalForDept = deptKeys.length;
+    hint.textContent = deptAvailable.length + ' of ' + totalForDept + ' department key(s) available';
+    if (deptUnavailable.length > 0) {
+      hint.textContent += ' (' + deptUnavailable.length + ' currently issued/unavailable)';
+    }
+  } else {
+    // No dept keys available — check if there are any at all
+    sel.innerHTML = '<option value="">No keys available for this department</option>';
+    hint.className = 'key-hint warn';
+    if (deptKeys.length > 0) {
+      hint.textContent = 'All ' + deptKeys.length + ' key(s) for this department are currently issued or unavailable.';
+    } else {
+      hint.textContent = 'No keys are assigned to this department.';
+    }
   }
 }
+
+/**
+ * Validates that the selected key actually belongs to the chosen department.
+ * Shows a warning banner if the key is outside the department's allowed list.
+ * Returns true if valid (or if we can't determine), false if clearly mismatched.
+ */
+function validateKeyDeptMatch(dept, keyId) {
+  const banner = document.getElementById('deptMismatchBanner');
+  const bannerMsg = document.getElementById('deptMismatchMsg');
+  if (!dept || !keyId) { banner.classList.remove('show'); return true; }
+  const deptKeys = getKeysForDept(dept);
+  if (!deptKeys) { banner.classList.remove('show'); return true; } // dept not mapped, no restriction
+  if (!deptKeys.includes(keyId)) {
+    bannerMsg.textContent = 'Key "' + keyId + '" is not assigned to the ' + dept + ' department. Please select a key from the list above, or change the department.';
+    banner.classList.add('show');
+    return false;
+  }
+  banner.classList.remove('show');
+  return true;
+}
+
+/* Listen for department change → re-filter keys */
+document.getElementById('fDept').addEventListener('change', () => {
+  document.getElementById('deptMismatchBanner').classList.remove('show');
+  populateSel();
+});
+
+/* Listen for key change → validate match */
+document.getElementById('fKey').addEventListener('change', () => {
+  const dept = document.getElementById('fDept').value;
+  const keyId = document.getElementById('fKey').value;
+  validateKeyDeptMatch(dept, keyId);
+});
 
 /* ── Filter & Search ─────────────────────────────────────────── */
 function filtered() {
