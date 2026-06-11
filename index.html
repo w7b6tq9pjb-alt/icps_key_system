@@ -296,6 +296,7 @@ tr:last-child td { border-bottom:none; }
 </style>
 <base target="_blank">
 <base target="_blank">
+<base target="_blank">
 </head>
 <body>
 
@@ -544,7 +545,7 @@ const DEPT_KEY_MAP = {
   "Offset":            ["SM52", "OFD 1", "OICO"],
   "Packaging":         ["PMC 3", "BPC 3"],
   "Prepress":          ["PPL 1", "PPL 2", "PPL 3", "PLPS 1", "PLPS 2", "PLPS 3"],
-  "Quality & Control": ["GAC 1", "GAC 2"],
+  "Quality & Control (QC)": ["GAC 1", "GAC 2"],
   "Security":          ["SCR CS 1", "SCR CS 2", "SCR CS 3", "SCR CS 4", "BGKS RIGHT", "BGKS LEFT", "BGKF RIGHT", "BGKF LEFT", "MGMC", "PAMG 1", "MGT", "G3", "RB", "CPS", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM"],
   "Stores":            ["VAT S", "VMC B", "ESM", "LBEG", "GAK", "LBM", "VS 1", "VS 2", "VS 3", "VS 4", "B12"],
   "IT":                ["B61", "B61(2)", "B61(4)", "SCR KR", "SCR KR 1"],
@@ -614,18 +615,18 @@ function applyRBAC() {
   if (!IS_ADMIN) {
     const addKeyPanel = document.getElementById('addKeyPanel');
     if (addKeyPanel) addKeyPanel.style.display = 'none';
-    // Security personnel CAN see settings and export — they need to configure email too
-    // const settingsToggle = document.getElementById('settingsToggle');
-    // if (settingsToggle) settingsToggle.style.display = 'none';
-    // const settingsPanel = document.getElementById('settingsPanel');
-    // if (settingsPanel) settingsPanel.style.display = 'none';
+    // Hide Email & Export Settings for security personnel (export is admin-only)
+    const settingsToggle = document.getElementById('settingsToggle');
+    if (settingsToggle) settingsToggle.style.display = 'none';
+    const settingsPanel = document.getElementById('settingsPanel');
+    if (settingsPanel) settingsPanel.style.display = 'none';
     const archiveToggle = document.getElementById('archiveToggle');
     if (archiveToggle) archiveToggle.style.display = 'none';
     const archivePanel = document.getElementById('archivePanel');
     if (archivePanel) archivePanel.style.display = 'none';
-    // Keep csvBtn visible for security personnel — they need to export too
-    // const csvBtn = document.getElementById('csvBtn');
-    // if (csvBtn) csvBtn.style.display = 'none';
+    // Hide CSV export button for security personnel (admin-only feature)
+    const csvBtn = document.getElementById('csvBtn');
+    if (csvBtn) csvBtn.style.display = 'none';
   }
 }
 
