@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="ICPS  key issuance and tracking system with digital signatures">
+<title>ICPS Key Issuance System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Design Tokens ───────────────────────────────────────────── */
+:root {
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 14px;
+  --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Light Mode */
+  --bg-body: #F4F6F8;
+  --bg-card: #FFFFFF;
+  --bg-surface: #F8FAFC;
+  --bg-hover: #F1F5F9;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-tertiary: #94A3B8;
+  --border: #E2E8F0;
+  --border-light: #F1F5F9;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.08);
+  --shadow-card: 0 4px 6px -1px rgba(0,0,0,0.05), 0 10px 15px -3px rgba(0,0,0,0.03), 0 0 0 1px rgba(0,0,0,0.02);
+  --shadow-input: 0 0 0 3px rgba(37,99,235,0.15);
+  --accent: #2563EB;
+  --accent-light: rgba(37,99,235,0.08);
+  --accent-hover: #1D4ED8;
+  --accent-glow: rgba(37,99,235,0.25);
+  --success: #059669;
+  --success-bg: #ECFDF5;
+  --warning: #D97706;
+  --warning-bg: #FFFBEB;
+  --danger: #DC2626;
+  --danger-bg: #FEF2F2;
+  --glow-primary: rgba(37,99,235,0.12);
+  --glow-accent: rgba(220,38,38,0.06);
+}
+
+/* Dark Mode */
+[data-theme="dark"] {
+  --bg-body: #0B1120;
+  --bg-card: #131C31;
+  --bg-surface: #0F172A;
+  --bg-hover: #1A2744;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-tertiary: #64748B;
+  --border: rgba(148,163,184,0.12);
+  --border-light: rgba(148,163,184,0.08);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 12px 32px rgba(0,0,0,0.5);
+  --shadow-card: 0 24px 64px rgba(0,0,0,0.45), 0 0 0 1px rgba(59,130,246,0.08);
+  --shadow-input: 0 0 0 3px rgba(59,130,246,0.18);
+  --accent: #3B82F6;
+  --accent-light: rgba(59,130,246,0.12);
+  --accent-hover: #60A5FA;
+  --accent-glow: rgba(59,130,246,0.35);
+  --success: #34D399;
+  --success-bg: rgba(52,211,153,0.12);
+  --warning: #FBBF24;
+  --warning-bg: rgba(251,191,36,0.12);
+  --danger: #F87171;
+  --danger-bg: rgba(248,113,113,0.12);
+  --glow-primary: rgba(59,130,246,0.18);
+  --glow-accent: rgba(245,158,11,0.08);
+}
+.sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border-width:0; }
+*, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+html { -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+body { font-family:var(--font-sans); background:var(--bg-body); color:var(--text-primary); line-height:1.5; min-height:100vh; transition: background 0.4s ease, color 0.4s ease; }
+
+/* ── Background Glows ────────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  pointer-events: none;
+  z-index: 0;
+  transition: background 0.4s ease;
+}
+
+/* ── Background Image (blur yet sharp) ─────────────────────── */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url('icps-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(10px) saturate(0.7);
+  transform: scale(1.05); /* prevent blur edge bleed */
+  opacity: 0.12;
+  pointer-events: none;
+  z-index: -1;
+  transition: opacity 0.4s ease, filter 0.4s ease;
+}
+[data-theme="dark"] body::after {
+  opacity: 0.06;
+  filter: blur(10px) saturate(0.5) brightness(0.6);
+}
+.glow-tl {
+  position: fixed;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--glow-primary) 0%, transparent 70%);
+  top: -120px; left: -120px;
+  pointer-events: none;
+  z-index: 0;
+  transition: background 0.4s ease;
+}
+.glow-br {
+  position: fixed;
+  width: 400px; height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--glow-accent) 0%, transparent 70%);
+  bottom: -100px; right: -100px;
+  pointer-events: none;
+  z-index: 0;
+  transition: background 0.4s ease;
+}
+
+/* ── Theme Toggle ────────────────────────────────────────────── */
+.theme-toggle {
+  position: fixed;
+  top: 20px; right: 20px;
+  z-index: 200;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: var(--transition);
+}
+.theme-toggle:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.theme-toggle button {
+  background: none; border: none; cursor: pointer;
+  padding: 6px 10px; border-radius: 50px;
+  color: var(--text-tertiary);
+  transition: var(--transition);
+  display: flex; align-items: center; justify-content: center;
+}
+.theme-toggle button.active { background: var(--accent-light); color: var(--accent); }
+.theme-toggle button:hover:not(.active) { color: var(--text-primary); }
+.theme-toggle svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+/* ── Accent Strip ────────────────────────────────────────────── */
+.accent-strip {
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--accent-glow,rgba(37,99,235,0.3)) 0%, var(--accent) 50%, var(--accent-glow,rgba(37,99,235,0.3)) 100%);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  opacity: 0.6;
+  transition: opacity 0.4s ease;
+}
+
+.icon { width:16px; height:16px; flex-shrink:0; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; fill:none; }
+.icon-sm { width:14px; height:14px; }
+.icon-lg { width:20px; height:20px; }
+#app { max-width:1200px; margin:0 auto; padding:2rem 1.5rem; }
+.header { display:flex; align-items:center; justify-content:space-between; margin-bottom:2rem; position:relative; z-index:1; }
+.header-left { display:flex; align-items:center; gap:14px; }
+.logo-mark { width:44px; height:44px; border-radius:12px; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-md); }
+.header-title { font-size:1.25rem; font-weight:700; letter-spacing:-0.02em; }
+.header-sub { font-size:0.8125rem; color:var(--text-secondary); margin-top:1px; }
+.date-stamp { font-size:0.8125rem; color:var(--text-tertiary); font-weight:500; }
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:1.75rem; position:relative; z-index:1; }
+.stat { background:var(--bg-card); border-radius:var(--radius-lg); padding:1.25rem 1.5rem; position:relative; overflow:hidden; border:1px solid var(--border-light); box-shadow:var(--shadow-sm); transition:var(--transition); }
+.stat:hover { box-shadow:var(--shadow-md); transform:translateY(-1px); }
+.stat-bar { position:absolute; bottom:0; left:0; height:3px; width:100%; border-radius:0 0 0 var(--radius-lg); }
+.stat-label { font-size:0.6875rem; font-weight:600; color:var(--text-tertiary); letter-spacing:0.08em; text-transform:uppercase; margin-bottom:6px; }
+.stat-num { font-size:1.75rem; font-weight:700; color:var(--text-primary); line-height:1.1; letter-spacing:-0.02em; }
+.stat-sub { font-size:0.75rem; color:var(--text-tertiary); margin-top:6px; }
+.panel { background:var(--bg-card); border-radius:var(--radius-lg); border:1px solid var(--border-light); box-shadow:var(--shadow-sm); margin-bottom:1.25rem; transition: background 0.4s ease, border-color 0.4s ease, box-shadow 0.2s; position:relative; z-index:1; }
+.panel:hover { box-shadow:var(--shadow-md); }
+.panel-header { display:flex; align-items:center; gap:8px; padding:1.1rem 1.5rem 0.75rem; font-size:0.75rem; font-weight:700; color:var(--text-tertiary); letter-spacing:0.08em; text-transform:uppercase; }
+.panel-body { padding:0 1.5rem 1.25rem; }
+.panel-disabled { opacity:0.5; pointer-events:none; }
+.form-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:12px; }
+.form-grid-2 { display:grid; grid-template-columns:1fr auto; gap:12px; align-items:end; }
+.form-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:12px; }
+.field { display:flex; flex-direction:column; gap:5px; }
+.field label { font-size:0.6875rem; font-weight:600; color:var(--text-secondary); letter-spacing:0.04em; text-transform:uppercase; }
+.field label .req { color:var(--danger); margin-left:2px; }
+.field input, .field select, .field textarea { font-size:0.875rem; padding:9px 12px; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--bg-surface); color:var(--text-primary); outline:none; font-family:inherit; transition:var(--transition); appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394A3B8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 10px center; padding-right:32px; }
+.field input, .field textarea { background-image:none; padding-right:12px; }
+.field textarea { resize:vertical; min-height:72px; line-height:1.5; }
+.field input::placeholder, .field textarea::placeholder { color:var(--text-tertiary); }
+.field input:focus, .field select:focus, .field textarea:focus { border-color:var(--accent); background-color:var(--bg-card); box-shadow:0 0 0 3px var(--accent-light); }
+.field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible { outline:none; }
+.sig-wrap { border:1px solid var(--border); border-radius:var(--radius-md); background:var(--bg-surface); overflow:hidden; position:relative; transition:var(--transition); width:320px; height:120px; }
+.sig-wrap.missing { border-color:var(--danger); box-shadow:0 0 0 3px var(--danger-bg); }
+.sig-wrap canvas { width:100%; height:100%; display:block; cursor:crosshair; touch-action:none; }
+.sig-clear { position:absolute; top:6px; right:6px; font-size:0.6875rem; font-weight:600; color:var(--text-tertiary); background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-sm); padding:3px 8px; cursor:pointer; font-family:inherit; transition:var(--transition); }
+.sig-clear:hover { color:var(--danger); border-color:var(--danger); background:var(--danger-bg); }
+.btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:9px 18px; font-size:0.875rem; font-weight:600; border:none; border-radius:var(--radius-md); cursor:pointer; font-family:inherit; transition:var(--transition); white-space:nowrap; }
+.btn-primary { background:var(--accent); color:#fff; box-shadow:0 1px 3px rgba(30,58,95,0.3); }
+.btn-primary:hover { background:var(--accent-hover); transform:translateY(-1px); box-shadow:0 4px 12px rgba(30,58,95,0.25); }
+.btn-primary:active { transform:translateY(0); }
+.btn-primary:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.btn-ghost { background:transparent; color:var(--text-secondary); border:1px solid var(--border); }
+.btn-ghost:hover { background:var(--bg-hover); border-color:var(--text-tertiary); }
+.btn-ghost:focus-visible { outline:2px solid var(--text-secondary); outline-offset:2px; }
+.btn-sm { padding:6px 12px; font-size:0.75rem; }
+.toolbar { display:flex; align-items:center; gap:12px; padding:1.1rem 1.5rem 0.75rem; flex-wrap:wrap; }
+.search-wrap { flex:1; min-width:220px; position:relative; }
+.search-wrap .icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--text-tertiary); pointer-events:none; }
+.search-wrap input { width:100%; padding:8px 12px 8px 36px; font-size:0.875rem; border:1px solid var(--border); border-radius:var(--radius-md); background:var(--bg-surface); color:var(--text-primary); outline:none; font-family:inherit; transition:var(--transition); }
+.search-wrap input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-light); }
+.filter-row { display:flex; gap:6px; flex-wrap:wrap; }
+.ftab { padding:6px 14px; font-size:0.8125rem; font-weight:600; border:1px solid var(--border); border-radius:20px; cursor:pointer; background:transparent; color:var(--text-secondary); transition:var(--transition); font-family:inherit; }
+.ftab:hover { background:var(--bg-hover); }
+.ftab.on { background:var(--accent); color:#fff; border-color:var(--accent); box-shadow:var(--shadow-sm); }
+.tbl-wrap { overflow-x:auto; overflow-y:auto; max-height:400px; padding:0 1.5rem; }
+table { width:100%; border-collapse:separate; border-spacing:0; font-size:0.8125rem; }
+col.c-key { width:85px; } col.c-dept { width:100px; } col.c-by { width:95px; } col.c-rec { width:95px; } col.c-pur { width:110px; } col.c-dat { width:100px; } col.c-ret { width:100px; } col.c-retby { width:95px; } col.c-retto { width:95px; } col.c-st { width:80px; } col.c-ac { width:110px; }
+th { font-size:0.6875rem; font-weight:700; color:var(--text-tertiary); text-align:left; padding:10px 10px; border-bottom:1px solid var(--border); background:var(--bg-surface); letter-spacing:0.04em; white-space:nowrap; position:sticky; top:0; z-index:1; }
+td { padding:10px; border-bottom:1px solid var(--border-light); color:var(--text-primary); vertical-align:middle; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:background 0.15s; }
+tr:hover td { background:var(--bg-hover); }
+tr:last-child td { border-bottom:none; }
+.key-pill { display:inline-flex; align-items:center; gap:6px; background:var(--accent-light); color:var(--accent); padding:4px 10px; border-radius:20px; font-size:0.6875rem; font-weight:700; letter-spacing:0.02em; }
+.dept-pill { display:inline-flex; align-items:center; gap:4px; background:var(--bg-hover); color:var(--text-secondary); padding:3px 8px; border-radius:20px; font-size:0.6875rem; font-weight:600; }
+.badge { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:0.6875rem; font-weight:700; }
+.b-issued { background:var(--warning-bg); color:var(--warning); }
+.b-available { background:var(--success-bg); color:var(--success); }
+.b-revoked { background:var(--danger-bg); color:var(--danger); }
+.dot { width:5px; height:5px; border-radius:50%; display:inline-block; }
+.dot-issued { background:var(--warning); }
+.dot-available { background:var(--success); }
+.dot-revoked { background:var(--danger); }
+.act { padding:5px 10px; border-radius:var(--radius-sm); font-size:0.6875rem; font-weight:700; cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--text-secondary); font-family:inherit; display:inline-flex; align-items:center; gap:4px; transition:var(--transition); }
+.act:hover { background:var(--bg-hover); }
+.act.ret { color:var(--success); border-color:#A7F3D0; }
+.act.ret:hover { background:var(--success-bg); }
+.act.rev { color:var(--danger); border-color:#FECACA; }
+.act.rev:hover { background:var(--danger-bg); }
+.foot { display:flex; align-items:center; justify-content:space-between; padding:0.9rem 1.5rem 1.25rem; border-top:1px solid var(--border-light); }
+.foot-count { font-size:0.8125rem; color:var(--text-secondary); font-weight:500; }
+.empty { text-align:center; padding:3.5rem 2rem; color:var(--text-secondary); font-size:0.875rem; }
+.empty .icon { margin:0 auto 12px; display:block; width:40px; height:40px; color:var(--text-tertiary); }
+.empty-title { font-weight:600; color:var(--text-primary); margin-bottom:4px; }
+.toast-container { position:fixed; top:20px; right:20px; display:flex; flex-direction:column; gap:8px; z-index:100; pointer-events:none; }
+.toast { display:flex; align-items:center; gap:10px; background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius-md); padding:12px 18px; font-size:0.875rem; color:var(--text-primary); box-shadow:var(--shadow-lg); transform:translateX(120%); opacity:0; transition:transform 0.35s cubic-bezier(0.16,1,0.3,1), opacity 0.3s; pointer-events:auto; max-width:360px; }
+.toast.show { transform:translateX(0); opacity:1; }
+.toast .icon { flex-shrink:0; }
+.toast.success .icon { color:var(--success); }
+.toast.error .icon { color:var(--danger); }
+.modal-overlay { position:fixed; inset:0; background:rgba(15,23,42,0.4); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:50; opacity:0; pointer-events:none; transition:opacity 0.2s; overflow-y:auto; padding:2rem 1rem; }
+.modal-overlay.show { opacity:1; pointer-events:auto; }
+.modal { background:var(--bg-card); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); max-width:520px; width:100%; transform:scale(0.95); transition:transform 0.2s cubic-bezier(0.16,1,0.3,1); margin:auto; }
+.modal-overlay.show .modal { transform:scale(1); }
+.modal-header { padding:1.25rem 1.5rem; border-bottom:1px solid var(--border-light); }
+.modal-title { font-size:1rem; font-weight:700; }
+.modal-body { padding:1.25rem 1.5rem; font-size:0.875rem; color:var(--text-secondary); line-height:1.6; }
+.modal-footer { padding:1rem 1.5rem; border-top:1px solid var(--border-light); display:flex; justify-content:flex-end; gap:8px; }
+.admin-modal .modal-header { background:var(--accent); border-radius:var(--radius-lg) var(--radius-lg) 0 0; display:flex; align-items:center; gap:12px; }
+.admin-modal .modal-title { color:#fff; font-size:1rem; font-weight:700; }
+.admin-modal .modal-sub { color:rgba(255,255,255,0.65); font-size:0.75rem; margin-top:2px; }
+.admin-lock-icon { width:38px; height:38px; border-radius:10px; background:rgba(255,255,255,0.15); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.admin-error { display:none; background:var(--danger-bg); border:1px solid #FECACA; border-radius:var(--radius-md); padding:10px 14px; font-size:0.8125rem; color:var(--danger); font-weight:500; margin-top:4px; align-items:center; gap:8px; }
+.admin-error.show { display:flex; }
+.admin-attempts { font-size:0.75rem; color:var(--text-tertiary); text-align:right; margin-top:6px; }
+.shake { animation:shake 0.4s cubic-bezier(.36,.07,.19,.97); }
+@keyframes shake { 10%,90% { transform:translateX(-2px); } 20%,80% { transform:translateX(4px); } 30%,50%,70% { transform:translateX(-6px); } 40%,60% { transform:translateX(6px); } }
+.input-password-wrap { position:relative; }
+.input-password-wrap input { width:100%; padding-right:40px !important; }
+.toggle-pw { position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:var(--text-tertiary); padding:0; display:flex; align-items:center; transition:var(--transition); }
+.toggle-pw:hover { color:var(--text-secondary); }
+.admin-badge { display:inline-flex; align-items:center; gap:5px; background:var(--success-bg); color:var(--success); border:1px solid #A7F3D0; padding:3px 10px; border-radius:20px; font-size:0.6875rem; font-weight:700; margin-left:auto; }
+.admin-badge-locked { background:var(--bg-hover); color:var(--text-tertiary); border-color:var(--border); }
+.settings-toggle { display:flex; align-items:center; gap:6px; font-size:0.8125rem; font-weight:600; color:var(--text-secondary); cursor:pointer; background:none; border:none; font-family:inherit; padding:4px 0; margin-bottom:8px; }
+.settings-toggle:hover { color:var(--accent); }
+.settings-panel { background:var(--bg-surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:1rem; margin-bottom:1rem; display:none; }
+.settings-panel.show { display:block; }
+@media (max-width:900px) { .form-grid-4 { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:768px) { .stats { grid-template-columns:repeat(2,1fr); } .form-grid-3 { grid-template-columns:1fr; } .form-grid-2 { grid-template-columns:1fr; } .form-grid-4 { grid-template-columns:1fr; } .toolbar { flex-direction:column; align-items:stretch; } .search-wrap { min-width:auto; } .filter-row { justify-content:center; } th,td { padding:10px 8px; font-size:0.75rem; } .c-ac { width:100px; } }
+@media (max-width:480px) { #app { padding:1rem; } .stats { grid-template-columns:1fr; } .header { flex-direction:column; align-items:flex-start; gap:8px; } .modal-overlay { padding:1rem 0.5rem; } }
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+.panel { animation:fadeIn 0.4s ease-out both; }
+.panel:nth-child(2) { animation-delay:0.05s; }
+.panel:nth-child(3) { animation-delay:0.1s; }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.5; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+<base target="_blank">
+<base target="_blank">
+<base target="_blank">
+</head>
+<body>
+
+<div class="glow-tl"></div>
+<div class="glow-br"></div>
+
+<!-- Theme Toggle -->
+<div class="theme-toggle" id="themeToggle" role="tablist" aria-label="Theme selector">
+  <button class="active" data-theme="light" role="tab" aria-selected="true" aria-label="Light mode">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+  </button>
+  <button data-theme="dark" role="tab" aria-selected="false" aria-label="Dark mode">
+    <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</div>
+
+<div id="app">
+  <h2 class="sr-only">ICPS Key Issuance System — manage physical key assignments</h2>
+
+  <header class="header">
+    <div class="header-left">
+      <div class="logo-mark" aria-hidden="true">
+        <svg class="icon" style="width:22px;height:22px;color:#fff;" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" stroke="currentColor"/></svg>
+      </div>
+      <div>
+        <div class="header-title">Key Issuance System</div>
+        <div class="header-sub">ICPS — Key Issuance management</div>
+      </div>
+    </div>
+    <div class="date-stamp" id="dateStamp" aria-label="Current date"></div>
+    <button class="btn btn-ghost btn-sm" id="archiveToggle" style="margin-left:auto;">
+      <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor"/><path d="M7 10l5 5 5-5" stroke="currentColor"/><path d="M12 15V3" stroke="currentColor"/></svg>
+      Archives
+    </button>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-bar" style="background:#93C5FD"></div><div class="stat-label">Total keys</div><div class="stat-num" id="sTotal"></div><div class="stat-sub">in registry</div></div>
+    <div class="stat"><div class="stat-bar" style="background:#34D399"></div><div class="stat-label">Available</div><div class="stat-num" id="sAvail">0</div><div class="stat-sub">ready to issue</div></div>
+    <div class="stat"><div class="stat-bar" style="background:#FBBF24"></div><div class="stat-label">Issued</div><div class="stat-num" id="sIssued">0</div><div class="stat-sub">currently out</div></div>
+    <div class="stat"><div class="stat-bar" style="background:#F87171"></div><div class="stat-label">Revoked</div><div class="stat-num" id="sRevoked">0</div><div class="stat-sub">deactivated</div></div>
+  </div>
+
+  <button class="settings-toggle" id="settingsToggle" aria-expanded="false" aria-controls="settingsPanel">
+    <svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor"/></svg>
+    Email & Export Settings
+  </button>
+  <div class="settings-panel" id="settingsPanel" role="region" aria-label="Email and export settings">
+    <div style="font-size:0.75rem;color:var(--text-tertiary);margin-bottom:12px;line-height:1.5;">
+      Configure SMTP to automatically email CSV exports. For Gmail, use <strong>smtp.gmail.com</strong>, port <strong>587</strong>, and an <strong>App Password</strong> (not your regular password).
+    </div>
+    <div id="settingsSavedBanner" style="display:none;align-items:center;gap:8px;background:var(--success-bg);border:1px solid #A7F3D0;border-radius:var(--radius-md);padding:8px 12px;font-size:0.75rem;color:var(--success);font-weight:600;margin-bottom:12px;">
+      <svg style="width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+      Settings saved — email will be sent on next CSV export.
+    </div>
+    <div class="form-grid-2" style="margin-bottom:12px;">
+      <div class="field"><label>SMTP Host <span class="req">*</span></label><input id="smtpHost" placeholder="smtp.gmail.com" autocomplete="off" /></div>
+      <div class="field"><label>SMTP Port <span class="req">*</span></label><input id="smtpPort" placeholder="587" value="587" type="number" autocomplete="off" /></div>
+    </div>
+    <div class="form-grid-2" style="margin-bottom:12px;">
+      <div class="field"><label>SMTP Username (sender email) <span class="req">*</span></label><input id="smtpUser" placeholder="sender@gmail.com" autocomplete="off" /></div>
+      <div class="field"><label>App Password <span class="req">*</span></label>
+        <div class="input-password-wrap">
+          <input id="smtpPass" type="password" placeholder="Gmail App Password" autocomplete="new-password" />
+          <button type="button" class="toggle-pw" id="toggleSmtpPw" aria-label="Toggle password visibility">
+            <svg id="smtpEyeIcon" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:14px;"><label>Recipient Emails <span class="req">*</span> (comma-separated)</label><input id="emailRecipients" placeholder="manager@company.com, security@company.com" autocomplete="off" /></div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <button class="btn btn-primary btn-sm" id="saveSettings">
+        <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg>
+        Save Settings
+      </button>
+      <span id="settingsStatusDot" style="font-size:0.75rem;color:var(--text-tertiary);"></span>
+    </div>
+  </div>
+
+  <div class="panel" id="archivePanel" style="display:none;">
+    <div class="panel-header">
+      <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor"/><path d="M7 10l5 5 5-5" stroke="currentColor"/><path d="M12 15V3" stroke="currentColor"/></svg>
+      Archive Records
+    </div>
+    <div class="panel-body">
+      <div class="form-grid-2" style="margin-bottom:12px;">
+        <div class="field"><label for="archiveMonth">Select Month</label><select id="archiveMonth"><option value="">Loading archives...</option></select></div>
+        <div class="field" style="display:flex; align-items:flex-end; gap:8px;">
+          <button class="btn btn-primary" id="loadArchiveBtn" style="flex:1;"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" stroke="currentColor"/><path d="M7 10l5 5 5-5" stroke="currentColor"/><path d="M12 15V3" stroke="currentColor"/></svg>Load Archive</button>
+          <button class="btn btn-ghost" id="backToCurrentBtn" style="flex:1;">Back to Current</button>
+        </div>
+      </div>
+      <div id="archiveInfo" style="font-size:0.8125rem; color:var(--text-secondary); margin-bottom:8px;"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="addKeyPanel">
+    <div class="accent-strip"></div>
+    <div class="panel-header">
+      <svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="currentColor"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor"/></svg>
+      Add New Key
+      <span class="admin-badge admin-badge-locked" id="adminSessionBadge"><svg class="icon" style="width:10px;height:10px;" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="currentColor"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor"/></svg> Admin required</span>
+    </div>
+    <div class="panel-body">
+      <div class="form-grid-3">
+        <div class="field"><label>Key ID <span class="req">*</span></label><input id="newKeyId" placeholder="KEY-001" autocomplete="off"></div>
+        <div class="field"><label>Label</label><input id="newKeyLabel" placeholder="Main Office Key" autocomplete="off"></div>
+        <div class="field"><label>Location</label><input id="newKeyLocation" placeholder="Security Room" autocomplete="off"></div>
+      </div>
+      <button class="btn btn-primary" id="addKeyBtn"><svg class="icon icon-sm" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="currentColor"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor"/><path d="M12 16v-2m0 0v-2m0 2h2m-2 0h-2" stroke="currentColor"/></svg>Add Key</button>
+    </div>
+  </div>
+
+  <div class="panel" id="issuePanel">
+    <div class="accent-strip"></div>
+    <div class="panel-header"><svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v8m-4-4h8" stroke="currentColor"/></svg>Issue a key</div>
+    <div class="panel-body">
+      <div class="form-grid-4">
+        <div class="field"><label for="fBy">Issued by<span class="req">*</span></label><input id="fBy" placeholder="Staff name" autocomplete="off" /></div>
+        <div class="field"><label for="fDept">Department<span class="req">*</span></label>
+          <select id="fDept"><option value="">Select department…</option><option value="Offset">Offset</option><option value="Lamination">Lamination</option><option value="Punching">Punching</option><option value="Stores">Stores</option><option value="Maintenance">Maintenance</option><option value="Security">Security</option><option value="Bureau">Bureau</option><option value="M & E">M & E</option><option value="Prepress">Prepress</option><option value="Packaging">Packaging</option><option value="Quality & Control (QC)">Quality & Control (QC)</option><option value="Administration">Administration</option><option value="IT">IT</option></select>
+        </div>
+        <div class="field"><label for="fRec">Recipient<span class="req">*</span></label><input id="fRec" placeholder="Recipient name" autocomplete="off" /></div>
+        <div class="field"><label for="fPur">Purpose<span class="req">*</span></label><input id="fPur" placeholder="Reason for key" autocomplete="off" /></div>
+      </div>
+      <div class="form-grid-2" style="margin-bottom:12px;">
+        <div class="field"><label>Issued by — signature<span class="req">*</span></label><div class="sig-wrap" id="wrapIssueSigBy"><canvas id="issueSigByCanvas"></canvas><button type="button" class="sig-clear" id="issueSigByClear">Clear</button></div></div>
+        <div class="field"><label>Recipient — signature<span class="req">*</span></label><div class="sig-wrap" id="wrapIssueSigRec"><canvas id="issueSigRecCanvas"></canvas><button type="button" class="sig-clear" id="issueSigRecClear">Clear</button></div></div>
+      </div>
+
+      <div class="dept-mismatch-banner" id="deptMismatchBanner" role="alert">
+        <svg style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4m0 4h.01"/></svg>
+        <span id="deptMismatchMsg"></span>
+      </div>
+
+      <div class="form-grid-2">
+        <div class="field">
+          <label for="fKey">Select key<span class="req">*</span></label>
+          <select id="fKey">
+            <option value="">Select a department first…</option>
+          </select>
+          <div class="key-hint" id="keyHint"></div>
+        <div class="field"><button class="btn btn-primary" id="issueBtn"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke="currentColor"/></svg>Issue key</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <div class="search-wrap"><svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35" stroke="currentColor"/></svg><input id="searchInput" placeholder="Search by key, name, department, purpose, staff…" autocomplete="off" /></div>
+      <div class="filter-row"><button class="ftab on" data-f="all">All</button><button class="ftab" data-f="Issued">Issued</button><button class="ftab" data-f="Available">Available</button><button class="ftab" data-f="Revoked">Revoked</button></div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <colgroup><col class="c-key"><col class="c-dept"><col class="c-by"><col class="c-rec"><col class="c-pur"><col class="c-dat"><col class="c-ret"><col class="c-retby"><col class="c-retto"><col class="c-st"><col class="c-ac"></colgroup>
+        <thead><tr><th scope="col">Key ID</th><th scope="col">Department</th><th scope="col">Issued by</th><th scope="col">Recipient</th><th scope="col">Purpose</th><th scope="col">Date issued</th><th scope="col">Date returned</th><th scope="col">Returned by</th><th scope="col">Returned to</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
+        <tbody id="tBody"></tbody>
+      </table>
+      <div class="empty" id="emptyMsg" style="display:none"><svg class="icon" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor"/></svg><div class="empty-title">No records found</div><div>Try adjusting your search or filter criteria</div></div>
+    </div>
+    <div class="foot"><div class="foot-count" id="recCount"></div><button class="btn btn-ghost btn-sm" id="csvBtn"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-7 5 5 5-5m-5 5V3" stroke="currentColor"/></svg>Export CSV</button></div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="modal-overlay" id="adminAuthModal" role="dialog" aria-modal="true" aria-labelledby="adminAuthTitle">
+  <div class="modal admin-modal" id="adminAuthModalInner">
+    <div class="modal-header">
+      <div class="admin-lock-icon" aria-hidden="true"><svg style="width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+      <div><div class="modal-title" id="adminAuthTitle">Administrator Login</div><div class="modal-sub">Required to add/revoke keys to/from the registry</div></div>
+    </div>
+    <div class="modal-body">
+      <div class="field" style="margin-bottom:12px;"><label for="adminUsername">Username<span class="req">*</span></label><input id="adminUsername" placeholder="Enter admin username" autocomplete="username" /></div>
+      <div class="field" style="margin-bottom:4px;"><label for="adminPassword">Password<span class="req">*</span></label><div class="input-password-wrap"><input id="adminPassword" type="password" placeholder="Enter admin password" autocomplete="current-password" /><button type="button" class="toggle-pw" id="toggleAdminPw" aria-label="Toggle password visibility"><svg id="eyeIcon" style="width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+      <div class="admin-error" id="adminError" role="alert"><svg style="width:14px;height:14px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg><span id="adminErrorMsg">Invalid username or password.</span></div>
+      <div class="admin-attempts" id="adminAttemptsMsg" style="display:none;"></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost btn-sm" id="adminAuthCancel">Cancel</button><button class="btn btn-primary btn-sm" id="adminAuthConfirm"><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3" stroke="currentColor"/></svg>Sign in</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal"><div class="modal-header"><div class="modal-title" id="modalTitle">Confirm Action</div></div><div class="modal-body" id="modalBody">Are you sure?</div><div class="modal-footer"><button class="btn btn-ghost btn-sm" id="modalCancel">Cancel</button><button class="btn btn-primary btn-sm" id="modalConfirm">Confirm</button></div></div>
+</div>
+
+<div class="modal-overlay" id="returnModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title">Return Key</div></div>
+    <div class="modal-body">
+      <p style="margin-bottom:1rem;color:var(--text-secondary);">Returning <strong id="returnKeyId" style="color:var(--text-primary);"></strong> from <strong id="returnRecipient" style="color:var(--text-primary);"></strong></p>
+      <div class="form-grid-2" style="margin-bottom:12px;">
+        <div class="field"><label for="rReturnedBy">Returned by<span class="req">*</span></label><input id="rReturnedBy" placeholder="Name of person returning" autocomplete="off" /></div>
+        <div class="field"><label for="rReturnedTo">Returned to<span class="req">*</span></label><input id="rReturnedTo" placeholder="Name of staff receiving" autocomplete="off" /></div>
+      </div>
+      <div class="field" style="margin-bottom:12px;"><label>Returned by — signature<span class="req">*</span></label><div class="sig-wrap" id="wrapRetSigBy"><canvas id="sigByCanvas"></canvas><button type="button" class="sig-clear" id="sigByClear">Clear</button></div></div>
+      <div class="field"><label>Returned to — signature<span class="req">*</span></label><div class="sig-wrap" id="wrapRetSigTo"><canvas id="sigToCanvas"></canvas><button type="button" class="sig-clear" id="sigToClear">Clear</button></div></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost btn-sm" id="returnCancel">Cancel</button><button class="btn btn-primary btn-sm" id="returnConfirm">Confirm return</button></div>
+  </div>
+</div>
+
+<script>
+/* ── Theme Management ────────────────────────────────────────── */
+const THEME_KEY = 'icps_theme';
+
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem(THEME_KEY, theme);
+  document.querySelectorAll('.theme-toggle button').forEach(btn => {
+    const active = btn.dataset.theme === theme;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+}
+
+function initTheme() {
+  const saved = localStorage.getItem(THEME_KEY);
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  setTheme(saved || (prefersDark ? 'dark' : 'light'));
+}
+
+document.querySelectorAll('.theme-toggle button').forEach(btn => {
+  btn.addEventListener('click', () => setTheme(btn.dataset.theme));
+});
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+  if (!localStorage.getItem(THEME_KEY)) setTheme(e.matches ? 'dark' : 'light');
+});
+
+initTheme();
+
+const API_BASE = (() => {
+  // Capacitor native (Android) — adjust IP if testing on a physical device
+  if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+    // Android Emulator: 10.0.2.2 maps to your dev machine's localhost
+    // Physical device: replace with your computer's LAN IP, e.g. 'http://192.168.1.42:3000'
+    return 'http://10.0.2.2:3000';
+  }
+  return 'http://localhost:3000';
+})(); // Change to your backend URL
+
+/* ═══════════════════════════════════════════════════════════════
+   DEPARTMENT → KEY MAP
+   ═══════════════════════════════════════════════════════════════ */
+const DEPT_KEY_MAP = {
+  "Administration":    ["GAK", "B12", "LDM 1", "LBEG", "CSM", "LBM", "CPS"],
+  "Bureau":            ["BMX 61 FIN", "BMX 60", "BMX 61 FUL", "MEQC 4", "DG", "BC 1", "BC 2"],
+  "Punching":          ["PM 1", "PM 2", "PC 1", "PC 2", "HSM 1"],
+  "Lamination":        ["LAM 4", "LAM 5", "LAM 6", "LAM 7"],
+  "Maintenance":       ["MGMC", "OU 1", "OU 2", "OU 3", "OU 4", "ESM", "MG 1", "CMGP 1", "PAMG 1", "MGT", "B12", "G3", "LDM 1", "RB", "CPS", "LBEG", "GAK", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM", "DT"],
+  "M & E":             ["KMR 1"],
+  "Offset":            ["SM52", "OFD 1", "OICO"],
+  "Packaging":         ["PMC 3", "BPC 3"],
+  "Prepress":          ["PPL 1", "PPL 2", "PPL 3", "PLPS 1", "PLPS 2", "PLPS 3"],
+  "Quality & Control (QC)": ["GAC 1", "GAC 2"],
+  "Security":          ["SCR CS 1", "SCR CS 2", "SCR CS 3", "SCR CS 4", "BGKS RIGHT", "BGKS LEFT", "BGKF RIGHT", "BGKF LEFT", "MGMC", "PAMG 1", "MGT", "G3", "RB", "CPS", "7A", "7B", "7C", "7D", "CSM", "WAF", "LBM"],
+  "Stores":            ["VAT S", "VMC B", "ESM", "LBEG", "GAK", "LBM", "VS 1", "VS 2", "VS 3", "VS 4", "B12"],
+  "IT":                ["B61", "B61(2)", "B61(4)", "SCR KR", "SCR KR 1"],
+  "Procurement":       ["ESM", "LBEG", "GAK", "LBM", "CPS"]
+};
+
+const ALL_KEYS_MASTER = [
+  "B61","B61(2)","B61(4)","SCR KR","SCR KR 1","PMC 3","KMR 1","MEC 4",
+  "PAC 1","PAC 2","PAC 3","PAC 4","PPL 1","PPL 2","PPL 3","PLPS 1","PLPS 2","PLPS 3",
+  "BMX 61 FIN","BMX 60","BMX 61 FUL","BMX 61","BGKF RIGHT","BGKF LEFT","M/E QC 4",
+  "BPC 3","SCR CS 1","SCR CS 2","SCR CS 3","SCR CS 4","GAC 1","GAC 2",
+  "BR-R75","BGKS LEFT","BGKS RIGHT","QC LAB","QC LAB(2)","QC LAB(3)",
+  "MSR","VS 1","VS 2","VS 3","VS 4","PM 1","PM 2","PC 1","PC 2",
+  "SM52","HSM 1","LAM 7","LAM 4","LAM 5","OFD 1","LAM 6",
+  "VMC B","VMC G","MGMC","OU 1","OU 2","OU 3","ESM","MG 1","CMGP 1",
+  "PAMG 1","MGT","B12","G 3","LDM 1","RB","CPS","LBEG",
+  "DG","BC 1","BC 2","GAK","7A","7B","7C","7D","CSM","WAF","LBM",
+  "DT","OICP","OICO","VAT P","VAT S"
+];
+
+
+
+/* ── User Session & RBAC ─────────────────────────────────────── */
+const USER_SESSION_KEY = 'icps_user_session';
+
+function getSession() {
+  try {
+    const s = JSON.parse(sessionStorage.getItem(USER_SESSION_KEY));
+    if (s && s.expiry > Date.now()) return s;
+  } catch(e) {}
+  return null;
+}
+
+// Redirect to login if no valid session
+const _session = getSession();
+if (!_session) {
+  window.location.replace('login.html');
+  throw new Error('No session');
+}
+
+const CURRENT_USER = _session;
+const IS_ADMIN = CURRENT_USER.role === 'admin';
+
+function applyRBAC() {
+  const headerEl = document.querySelector('.header');
+  if (headerEl) {
+    const userBar = document.createElement('div');
+    userBar.id = 'userBar';
+    userBar.style.cssText = 'display:flex;align-items:center;gap:10px;margin-left:12px;flex-shrink:0;';
+    userBar.innerHTML = `
+      <div style="display:flex;align-items:center;gap:8px;background:rgba(30,58,95,0.08);border:1px solid rgba(30,58,95,0.15);border-radius:20px;padding:5px 12px 5px 8px;">
+        <div style="width:26px;height:26px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg style="width:13px;height:13px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#fff"/><path d="M4 20c0-4 3.582-7 8-7s8 3 8 7" stroke="#fff"/></svg>
+        </div>
+        <div>
+          <div style="font-size:0.75rem;font-weight:700;color:var(--text-primary);line-height:1.1;">${escapeHtml(CURRENT_USER.name)}</div>
+          <div style="font-size:0.6rem;color:var(--text-tertiary);font-weight:600;letter-spacing:0.05em;text-transform:uppercase;">${IS_ADMIN ? 'Administrator' : 'Security Personnel'}</div>
+        </div>
+      </div>
+      <button onclick="logoutUser()" style="display:flex;align-items:center;gap:5px;padding:6px 11px;font-size:0.75rem;font-weight:600;border:1px solid var(--border);border-radius:var(--radius-md);background:transparent;color:var(--text-secondary);cursor:pointer;font-family:inherit;transition:var(--transition);" onmouseover="this.style.background=\'var(--danger-bg)\';this.style.color=\'var(--danger)\';this.style.borderColor=\'#FECACA\';" onmouseout="this.style.background=\'transparent\';this.style.color=\'var(--text-secondary)\';this.style.borderColor=\'var(--border)\';">
+        <svg style="width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+        Sign out
+      </button>`;
+    headerEl.appendChild(userBar);
+  }
+
+  if (!IS_ADMIN) {
+    const addKeyPanel = document.getElementById('addKeyPanel');
+    if (addKeyPanel) addKeyPanel.style.display = 'none';
+    // Hide Email & Export Settings for security personnel (export is admin-only)
+    const settingsToggle = document.getElementById('settingsToggle');
+    if (settingsToggle) settingsToggle.style.display = 'none';
+    const settingsPanel = document.getElementById('settingsPanel');
+    if (settingsPanel) settingsPanel.style.display = 'none';
+    const archiveToggle = document.getElementById('archiveToggle');
+    if (archiveToggle) archiveToggle.style.display = 'none';
+    const archivePanel = document.getElementById('archivePanel');
+    if (archivePanel) archivePanel.style.display = 'none';
+    // Hide CSV export button for security personnel (admin-only feature)
+    const csvBtn = document.getElementById('csvBtn');
+    if (csvBtn) csvBtn.style.display = 'none';
+  }
+}
+
+function logoutUser() {
+  try { sessionStorage.removeItem(USER_SESSION_KEY); } catch(e) {}
+  try { sessionStorage.removeItem('icps_admin_session'); } catch(e) {}
+  window.location.replace('login.html');
+}
+
+/* ── Admin Auth State ────────────────────────────────────────── */
+const ADMIN_SESSION_KEY = 'icps_admin_session';
+const ADMIN_SESSION_DURATION_MS = 30 * 60 * 1000;
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 5 * 60 * 1000;
+
+let adminAttempts = 0;
+let adminLockedUntil = 0;
+let adminSessionExpiry = 0;
+let pendingAdminAction = null;
+
+/* ── Admin Auth: Server-side verification (recommended) ────────
+   For production, replace verifyAdminCredentials with an API call.
+   The client-side fallback below is for demo/development only.    */
+async function verifyAdminCredentials(username, password) {
+  // PRODUCTION: Uncomment and use server-side auth
+  // const res = await apiPost('/api/admin/login', { username, password });
+  // return res.success ? { valid: true, token: res.token } : { valid: false };
+
+  // DEMO FALLBACK (remove in production):
+  const validUsers = { 'admin': 'icps2024', 'security': 'security2024' };
+  if (validUsers[username] && validUsers[username] === password) {
+    return { valid: true, token: 'demo-token-' + Date.now() };
+  }
+  return { valid: false };
+}
+
+function isAdminSessionActive() {
+  if (Date.now() < adminSessionExpiry) return true;
+  try {
+    const s = JSON.parse(sessionStorage.getItem(ADMIN_SESSION_KEY));
+    if (s && s.expiry > Date.now()) {
+      adminSessionExpiry = s.expiry;
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
+function setAdminSession(token) {
+  adminSessionExpiry = Date.now() + ADMIN_SESSION_DURATION_MS;
+  adminAttempts = 0;
+  try {
+    sessionStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify({
+      expiry: adminSessionExpiry,
+      token: token
+    }));
+  } catch(e) {}
+  updateAdminBadge();
+}
+
+function clearAdminSession() {
+  adminSessionExpiry = 0;
+  try {
+    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  } catch(e) {}
+  updateAdminBadge();
+}
+
+function updateAdminBadge() {
+  const badge = document.getElementById('adminSessionBadge');
+  if (!badge) return;
+  if (isAdminSessionActive()) {
+    badge.className = 'admin-badge';
+    badge.innerHTML = '<svg class="icon" style="width:10px;height:10px;" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor"/><path d="M22 4 12 14.01l-3-3" stroke="currentColor"/></svg> Admin active';
+  } else {
+    badge.className = 'admin-badge admin-badge-locked';
+    badge.innerHTML = '<svg class="icon" style="width:10px;height:10px;" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="currentColor"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor"/></svg> Admin required';
+  }
+}
+
+function openAdminAuthModal(onSuccess, context) {
+  pendingAdminAction = onSuccess;
+  adminAttempts = 0;
+  const modalTitle = document.getElementById('adminAuthTitle');
+  const modalSub = document.querySelector('.admin-modal .modal-sub');
+  if (context === 'revoke') {
+    modalTitle.textContent = 'Administrator Login — Revoke Key';
+    modalSub.textContent = 'Admin authentication required to revoke a key. This action cannot be undone.';
+  } else {
+    modalTitle.textContent = 'Administrator Login';
+    modalSub.textContent = 'Required to add/revoke keys to/from the registry';
+  }
+  document.getElementById('adminUsername').value = '';
+  document.getElementById('adminPassword').value = '';
+  document.getElementById('adminError').classList.remove('show');
+  document.getElementById('adminAttemptsMsg').style.display = 'none';
+  document.getElementById('adminAuthModal').classList.add('show');
+  setTimeout(() => document.getElementById('adminUsername').focus(), 120);
+}
+
+function closeAdminAuthModal() {
+  document.getElementById('adminAuthModal').classList.remove('show');
+  pendingAdminAction = null;
+  document.getElementById('adminError').classList.remove('show');
+  document.getElementById('adminAttemptsMsg').style.display = 'none';
+}
+
+function showAdminError(msg) {
+  const errEl = document.getElementById('adminError');
+  document.getElementById('adminErrorMsg').textContent = msg;
+  errEl.classList.add('show');
+  const modal = document.getElementById('adminAuthModalInner');
+  modal.classList.remove('shake');
+  void modal.offsetWidth;
+  modal.classList.add('shake');
+  setTimeout(() => modal.classList.remove('shake'), 500);
+}
+
+async function attemptAdminLogin() {
+  const now = Date.now();
+  if (adminLockedUntil > now) {
+    const remaining = Math.ceil((adminLockedUntil - now) / 1000 / 60);
+    showAdminError('Too many failed attempts. Try again in ' + remaining + ' minute' + (remaining !== 1 ? 's' : '') + '.');
+    return;
+  }
+  const username = document.getElementById('adminUsername').value.trim();
+  const password = document.getElementById('adminPassword').value;
+  if (!username || !password) {
+    showAdminError('Please enter both username and password.');
+    return;
+  }
+  try {
+    const result = await verifyAdminCredentials(username, password);
+    if (result.valid) {
+      setAdminSession(result.token);
+      closeAdminAuthModal();
+      toast('Admin session started (30 min)', 'success');
+      if (typeof pendingAdminAction === 'function') {
+        pendingAdminAction();
+        pendingAdminAction = null;
+      }
+    } else {
+      handleFailedLogin();
+    }
+  } catch (err) {
+    showAdminError('Authentication service unavailable. Please try again.');
+  }
+}
+
+function handleFailedLogin() {
+  adminAttempts++;
+  const remaining = MAX_ATTEMPTS - adminAttempts;
+  if (adminAttempts >= MAX_ATTEMPTS) {
+    adminLockedUntil = Date.now() + LOCKOUT_DURATION_MS;
+    adminAttempts = 0;
+    showAdminError('Too many failed attempts. Account locked for 5 minutes.');
+    document.getElementById('adminAttemptsMsg').style.display = 'none';
+  } else {
+    showAdminError('Invalid username or password.');
+    const attemptsEl = document.getElementById('adminAttemptsMsg');
+    attemptsEl.style.display = 'block';
+    attemptsEl.textContent = remaining + ' attempt' + (remaining !== 1 ? 's' : '') + ' remaining before lockout.';
+  }
+}
+
+document.getElementById('adminAuthConfirm').addEventListener('click', attemptAdminLogin);
+document.getElementById('adminAuthCancel').addEventListener('click', closeAdminAuthModal);
+document.getElementById('adminAuthModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeAdminAuthModal();
+});
+document.getElementById('adminPassword').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') attemptAdminLogin();
+});
+document.getElementById('adminUsername').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') document.getElementById('adminPassword').focus();
+});
+document.getElementById('toggleAdminPw').addEventListener('click', () => {
+  const input = document.getElementById('adminPassword');
+  const icon = document.getElementById('eyeIcon');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  } else {
+    input.type = 'password';
+    icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  }
+});
+
+/* ── State ───────────────────────────────────────────────────── */
+let records = [];
+let filter = 'all';
+let search = '';
+let confirmCallback = null;
+let returnTargetIdx = null;
+
+/* ── Signature Pads ──────────────────────────────────────────── */
+const sigPads = {};
+
+function initSigPad(canvasId, clearBtnId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let drawing = false;
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#0F172A';
+  }
+  resize();
+  window.addEventListener('resize', resize);
+  function getPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: clientX - rect.left, y: clientY - rect.top };
+  }
+  function start(e) {
+    drawing = true;
+    const pos = getPos(e);
+    ctx.beginPath();
+    ctx.moveTo(pos.x, pos.y);
+    canvas.parentElement.classList.remove('missing');
+    e.preventDefault();
+  }
+  function move(e) {
+    if (!drawing) return;
+    const pos = getPos(e);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    e.preventDefault();
+  }
+  function end() { drawing = false; }
+  canvas.addEventListener('mousedown', start);
+  canvas.addEventListener('mousemove', move);
+  canvas.addEventListener('mouseup', end);
+  canvas.addEventListener('mouseleave', end);
+  canvas.addEventListener('touchstart', start, { passive: false });
+  canvas.addEventListener('touchmove', move, { passive: false });
+  canvas.addEventListener('touchend', end);
+  const clearBtn = document.getElementById(clearBtnId);
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.parentElement.classList.remove('missing');
+    });
+  }
+  sigPads[canvasId] = { canvas, ctx, resize };
+}
+
+function getSigData(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return null;
+  const ctx = canvas.getContext('2d');
+  const pixelBuffer = new Uint32Array(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
+  const isBlank = !pixelBuffer.some(color => color !== 0);
+  return isBlank ? null : canvas.toDataURL('image/png');
+}
+
+function isSigBlank(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return true;
+  const ctx = canvas.getContext('2d');
+  const pixelBuffer = new Uint32Array(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer);
+  return !pixelBuffer.some(color => color !== 0);
+}
+
+function clearSig(canvasId) {
+  const c = document.getElementById(canvasId);
+  if (c) {
+    c.getContext('2d').clearRect(0, 0, c.width, c.height);
+    c.parentElement.classList.remove('missing');
+  }
+}
+
+function clearIssueSigs() {
+  clearSig('issueSigByCanvas');
+  clearSig('issueSigRecCanvas');
+}
+
+function clearReturnSigs() {
+  clearSig('sigByCanvas');
+  clearSig('sigToCanvas');
+}
+
+function flashMissing(wrapId) {
+  const el = document.getElementById(wrapId);
+  if (!el) return;
+  el.classList.add('missing');
+  setTimeout(() => el.classList.remove('missing'), 2000);
+}
+
+/* ── Icons ───────────────────────────────────────────────────── */
+const ICONS = {
+  key: '<svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" stroke="currentColor"/></svg>',
+  return: '<svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5" stroke="currentColor"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11" stroke="currentColor"/></svg>',
+  revoke: '<svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor"/><path d="m4.93 4.93 14.14 14.14" stroke="currentColor"/></svg>',
+  check: '<svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" stroke="currentColor"/></svg>',
+  alert: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor"/><path d="M12 8v4m0 4h.01" stroke="currentColor"/></svg>',
+  inbox: '<svg class="icon" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2" stroke="currentColor"/></svg>'
+};
+
+/* ── Helpers ─────────────────────────────────────────────────── */
+function fmt(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return '—';
+  const date = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return date + ' · ' + time;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/* ── Toast ───────────────────────────────────────────────────── */
+const activeToasts = new Set();
+const MAX_TOASTS = 5;
+
+function toast(msg, type) {
+  type = type || 'success';
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+
+  // Deduplicate: remove identical toast if already showing
+  for (const existing of activeToasts) {
+    if (existing.dataset.msg === msg && existing.dataset.type === type) {
+      // Reset timer on duplicate
+      clearTimeout(existing._removeTimer);
+      clearTimeout(existing._hideTimer);
+      existing._hideTimer = setTimeout(() => {
+        existing.classList.remove('show');
+        existing._removeTimer = setTimeout(() => { existing.remove(); activeToasts.delete(existing); }, 300);
+      }, 3000);
+      return;
+    }
+  }
+
+  // Limit max toasts
+  if (activeToasts.size >= MAX_TOASTS) {
+    const oldest = activeToasts.values().next().value;
+    if (oldest) { oldest.remove(); activeToasts.delete(oldest); }
+  }
+
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.dataset.msg = msg;
+  el.dataset.type = type;
+  el.innerHTML = (type === 'success' ? ICONS.check : ICONS.alert) + '<span>' + escapeHtml(msg) + '</span>';
+  container.appendChild(el);
+  activeToasts.add(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  el._hideTimer = setTimeout(() => {
+    el.classList.remove('show');
+    el._removeTimer = setTimeout(() => { el.remove(); activeToasts.delete(el); }, 300);
+  }, 3000);
+}
+
+/* ── API Helpers ─────────────────────────────────────────────── */
+async function apiGet(endpoint) {
+  try {
+    const res = await fetch(API_BASE + endpoint);
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  } catch (err) {
+    if (err.name === 'TypeError') throw new Error('Network error: unable to reach server');
+    throw err;
+  }
+}
+
+async function apiPost(endpoint, body) {
+  try {
+    const res = await fetch(API_BASE + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  } catch (err) {
+    if (err.name === 'TypeError') throw new Error('Network error: unable to reach server');
+    throw err;
+  }
+}
+
+async function apiPut(endpoint, body) {
+  try {
+    const res = await fetch(API_BASE + endpoint, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return res.json();
+  } catch (err) {
+    if (err.name === 'TypeError') throw new Error('Network error: unable to reach server');
+    throw err;
+  }
+}
+
+/* ── Confirm Modal (Revoke) ──────────────────────────────────── */
+function confirmAction(title, body, onConfirm) {
+  document.getElementById('modalTitle').textContent = title;
+  document.getElementById('modalBody').textContent = body;
+  const overlay = document.getElementById('confirmModal');
+  overlay.classList.add('show');
+  confirmCallback = onConfirm;
+}
+
+document.getElementById('modalCancel').addEventListener('click', () => {
+  document.getElementById('confirmModal').classList.remove('show');
+  confirmCallback = null;
+});
+document.getElementById('modalConfirm').addEventListener('click', () => {
+  document.getElementById('confirmModal').classList.remove('show');
+  if (confirmCallback) { confirmCallback(); confirmCallback = null; }
+});
+document.getElementById('confirmModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) {
+    document.getElementById('confirmModal').classList.remove('show');
+    confirmCallback = null;
+  }
+});
+
+/* ── Return Modal ────────────────────────────────────────────── */
+function openReturnModal(idx) {
+  const r = records[idx];
+  if (!r || r.status !== 'Issued') return;
+  returnTargetIdx = idx;
+  document.getElementById('returnKeyId').textContent = r.keyId;
+  document.getElementById('returnRecipient').textContent = r.recipient;
+  document.getElementById('rReturnedBy').value = '';
+  document.getElementById('rReturnedTo').value = '';
+  clearReturnSigs();
+  document.getElementById('returnModal').classList.add('show');
+  setTimeout(() => document.getElementById('rReturnedBy').focus(), 100);
+}
+
+function closeReturnModal() {
+  document.getElementById('returnModal').classList.remove('show');
+  returnTargetIdx = null;
+}
+
+document.getElementById('returnCancel').addEventListener('click', closeReturnModal);
+document.getElementById('returnConfirm').addEventListener('click', async () => {
+  if (returnTargetIdx === null) return;
+  const returnedBy = document.getElementById('rReturnedBy').value.trim();
+  const returnedTo = document.getElementById('rReturnedTo').value.trim();
+  const sigByBlank = isSigBlank('sigByCanvas');
+  const sigToBlank = isSigBlank('sigToCanvas');
+  let hasError = false;
+  if (!returnedBy) { toast('Please enter who returned the key', 'error'); hasError = true; }
+  if (!returnedTo) { toast('Please enter who received the key', 'error'); hasError = true; }
+  if (sigByBlank) { flashMissing('wrapRetSigBy'); toast('Please provide signature for "Returned by"', 'error'); hasError = true; }
+  if (sigToBlank) { flashMissing('wrapRetSigTo'); toast('Please provide signature for "Returned to"', 'error'); hasError = true; }
+  if (hasError) return;
+  try {
+    await apiPut('/api/records/' + records[returnTargetIdx].id + '/return', {
+      returnedBy, returnedTo,
+      sigBy: getSigData('sigByCanvas'),
+      sigTo: getSigData('sigToCanvas')
+    });
+    await loadRecords();
+    closeReturnModal();
+    toast(records[returnTargetIdx].keyId + ' returned successfully');
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+});
+document.getElementById('returnModal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeReturnModal();
+});
+
+/* ── Stats ───────────────────────────────────────────────────── */
+let allKeys = [];
+
+function stats() {
+  const totalKeys = allKeys.length;
+  const issued = records.filter(r => r.status === 'Issued');
+  const revoked = records.filter(r => r.status === 'Revoked');
+  const available = totalKeys - issued.length - revoked.length;
+  document.getElementById('sTotal').textContent = totalKeys;
+  document.getElementById('sAvail').textContent = available;
+  document.getElementById('sIssued').textContent = issued.length;
+  document.getElementById('sRevoked').textContent = revoked.length;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   KEY SELECTOR  — filtered by selected department
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Returns the list of key IDs allowed for a given department.
+ * Falls back to all available keys from the server if dept has no mapping.
+ */
+function getKeysForDept(dept) {
+  if (!dept) return null; // no dept selected
+  return DEPT_KEY_MAP[dept] || null;
+}
+
+/**
+ * Re-populates the key <select> based on:
+ *   1. The currently selected department (DEPT_KEY_MAP filter)
+ *   2. Which keys are actually available (not currently issued/revoked) from the server
+ * Also updates the hint text and mismatch banner.
+ */
+async function populateSel() {
+  const dept = document.getElementById('fDept').value;
+  const sel = document.getElementById('fKey');
+  const hint = document.getElementById('keyHint');
+  const banner = document.getElementById('deptMismatchBanner');
+  const bannerMsg = document.getElementById('deptMismatchMsg');
+
+  // Hide banner by default
+  banner.classList.remove('show');
+  hint.className = 'key-hint';
+  hint.textContent = '';
+
+  if (!dept) {
+    sel.innerHTML = '<option value="">Select a department first…</option>';
+    return;
+  }
+
+  let availableFromServer = [];
+  try {
+    availableFromServer = await apiGet('/api/keys/available');
+  } catch (err) {
+    toast('Failed to load available keys', 'error');
+    sel.innerHTML = '<option value="">Error loading keys</option>';
+    return;
+  }
+
+  const deptKeys = getKeysForDept(dept); // null = dept not in map (show all)
+
+  if (!deptKeys) {
+    // Department not in master map — show all server-available keys with a note
+    if (availableFromServer.length) {
+      sel.innerHTML = availableFromServer.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+      hint.className = 'key-hint';
+      hint.textContent = availableFromServer.length + ' key(s) available';
+    } else {
+      sel.innerHTML = '<option value="">No keys available</option>';
+    }
+    return;
+  }
+
+  // Filter: only keys both in this dept's allowed list AND available on server
+  const deptAvailable = deptKeys.filter(k => availableFromServer.includes(k));
+  // Keys in dept's list but currently issued/unavailable
+  const deptUnavailable = deptKeys.filter(k => !availableFromServer.includes(k));
+
+  if (deptAvailable.length > 0) {
+    sel.innerHTML = deptAvailable.map(k => `<option value="${escapeHtml(k)}">${escapeHtml(k)}</option>`).join('');
+    hint.className = 'key-hint info';
+    const totalForDept = deptKeys.length;
+    hint.textContent = deptAvailable.length + ' of ' + totalForDept + ' department key(s) available';
+    if (deptUnavailable.length > 0) {
+      hint.textContent += ' (' + deptUnavailable.length + ' currently issued/unavailable)';
+    }
+  } else {
+    // No dept keys available — check if there are any at all
+    sel.innerHTML = '<option value="">No keys available for this department</option>';
+    hint.className = 'key-hint warn';
+    if (deptKeys.length > 0) {
+      hint.textContent = 'All ' + deptKeys.length + ' key(s) for this department are currently issued or unavailable.';
+    } else {
+      hint.textContent = 'No keys are assigned to this department.';
+    }
+  }
+}
+
+/**
+ * Validates that the selected key actually belongs to the chosen department.
+ * Shows a warning banner if the key is outside the department's allowed list.
+ * Returns true if valid (or if we can't determine), false if clearly mismatched.
+ */
+function validateKeyDeptMatch(dept, keyId) {
+  const banner = document.getElementById('deptMismatchBanner');
+  const bannerMsg = document.getElementById('deptMismatchMsg');
+  if (!dept || !keyId) { banner.classList.remove('show'); return true; }
+  const deptKeys = getKeysForDept(dept);
+  if (!deptKeys) { banner.classList.remove('show'); return true; } // dept not mapped, no restriction
+  if (!deptKeys.includes(keyId)) {
+    bannerMsg.textContent = 'Key "' + keyId + '" is not assigned to the ' + dept + ' department. Please select a key from the list above, or change the department.';
+    banner.classList.add('show');
+    return false;
+  }
+  banner.classList.remove('show');
+  return true;
+}
+
+/* Listen for department change → re-filter keys */
+document.getElementById('fDept').addEventListener('change', () => {
+  document.getElementById('deptMismatchBanner').classList.remove('show');
+  populateSel();
+});
+
+/* Listen for key change → validate match */
+document.getElementById('fKey').addEventListener('change', () => {
+  const dept = document.getElementById('fDept').value;
+  const keyId = document.getElementById('fKey').value;
+  validateKeyDeptMatch(dept, keyId);
+});
+
+/* ── Filter & Search ─────────────────────────────────────────── */
+function filtered() {
+  const s = search.toLowerCase().trim();
+  return records.filter(r => {
+    const ok = filter === 'all' || r.status === filter;
+    if (!s) return ok;
+    const fields = [r.keyId, r.issuedBy, r.recipient, r.purpose, r.department, r.returnedBy, r.returnedTo];
+    return ok && fields.some(v => v && v.toLowerCase().includes(s));
+  });
+}
+
+/* ── Render ──────────────────────────────────────────────────── */
+function render(options) {
+  options = options || {};
+  const isArchive = options.isArchive || isViewingArchive;
+  stats();
+  populateSel();
+  const data = filtered();
+  const tb = document.getElementById('tBody');
+  const em = document.getElementById('emptyMsg');
+  document.getElementById('recCount').textContent = data.length + ' record' + (data.length === 1 ? '' : 's');
+
+  if (!data.length) {
+    tb.innerHTML = '';
+    em.style.display = 'block';
+    return;
+  }
+  em.style.display = 'none';
+
+  tb.innerHTML = data.map(r => {
+    const i = records.indexOf(r);
+    const bc = r.status === 'Issued' ? 'b-issued' : r.status === 'Available' ? 'b-available' : 'b-revoked';
+    const dc = r.status === 'Issued' ? 'dot-issued' : r.status === 'Available' ? 'dot-available' : 'dot-revoked';
+    let acts = '';
+    if (!isArchive) {
+      // Return: Admin and Security Personnel can both return issued keys
+      if (r.status === 'Issued') {
+        acts += '<button class="act ret" data-action="return" data-idx="' + i + '">' + ICONS.return + ' Return</button>';
+      }
+      // Revoke: Admin only
+      if (IS_ADMIN && r.status !== 'Revoked') {
+        acts += '<button class="act rev" data-action="revoke" data-idx="' + i + '">' + ICONS.revoke + ' Revoke</button>';
+      }
+      // Security on non-issued rows: view only
+      if (!IS_ADMIN && r.status !== 'Issued') {
+        acts = '<span style="color:var(--text-tertiary);font-size:0.75rem;">View only</span>';
+      }
+    } else {
+      acts = '<span style="color:var(--text-tertiary);font-size:0.75rem;">Archived</span>';
+    }
+    const retBy = r.returnedBy || '—';
+    const retTo = r.returnedTo || '—';
+    const hasSig = r.sigBy || r.sigTo ? ' ✓' : '';
+    const sigTitle = [];
+    if (r.sigBy) sigTitle.push('Returned by: signed');
+    if (r.sigTo) sigTitle.push('Returned to: signed');
+    const titleAttr = sigTitle.length ? sigTitle.join(' | ') : '';
+    return '<tr>' +
+      '<td><span class="key-pill">' + ICONS.key + escapeHtml(r.keyId) + '</span></td>' +
+      '<td><span class="dept-pill">' + escapeHtml(r.department || '—') + '</span></td>' +
+      '<td title="' + escapeHtml(r.issuedBy) + '">' + escapeHtml(r.issuedBy) + '</td>' +
+      '<td title="' + escapeHtml(r.recipient) + '">' + escapeHtml(r.recipient) + '</td>' +
+      '<td title="' + escapeHtml(r.purpose) + '">' + escapeHtml(r.purpose) + '</td>' +
+      '<td style="color:var(--text-secondary)">' + fmt(r.dateIssued) + '</td>' +
+      '<td style="color:var(--text-secondary)">' + fmt(r.dateReturned) + '</td>' +
+      '<td title="' + escapeHtml(titleAttr) + '">' + escapeHtml(retBy) + hasSig + '</td>' +
+      '<td>' + escapeHtml(retTo) + '</td>' +
+      '<td><span class="badge ' + bc + '"><span class="dot ' + dc + '"></span>' + r.status + '</span></td>' +
+      '<td>' + acts + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+/* ── Load Records ────────────────────────────────────────────── */
+async function loadRecords() {
+  try {
+    records = await apiGet('/api/records');
+    render();
+  } catch (err) {
+    toast('Failed to load records from database', 'error');
+  }
+}
+
+async function loadKeys() {
+  try {
+    allKeys = await apiGet('/api/keys');
+    stats();
+  } catch (err) {
+    toast('Failed to load keys', 'error');
+  }
+}
+
+/* ── Actions ─────────────────────────────────────────────────── */
+function doReturn(i) {
+  if (!records[i]) return;
+  openReturnModal(i);
+}
+
+async function doRevoke(i) {
+  const r = records[i];
+  if (!r) return;
+  function proceedWithRevoke() {
+    confirmAction(
+      'Revoke Key',
+      'Are you sure you want to revoke ' + r.keyId + '? It was issued to ' + r.recipient + ' in ' + (r.department || 'Unknown Department') + '. This action cannot be undone.',
+      async () => {
+        try {
+          await apiPut('/api/records/' + r.id + '/revoke', {});
+          await loadRecords();
+          toast(r.keyId + ' has been revoked');
+        } catch (err) {
+          toast(err.message, 'error');
+        }
+      }
+    );
+  }
+  if (isAdminSessionActive()) {
+    proceedWithRevoke();
+  } else {
+    openAdminAuthModal(() => proceedWithRevoke(), 'revoke');
+  }
+}
+
+document.getElementById('tBody').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  const idx = parseInt(btn.dataset.idx, 10);
+  const action = btn.dataset.action;
+  if (action === 'return') doReturn(idx);
+  if (action === 'revoke') doRevoke(idx);
+});
+
+/* ── Issue Key ───────────────────────────────────────────────── */
+document.getElementById('issueBtn').addEventListener('click', async () => {
+  const by = document.getElementById('fBy').value.trim();
+  const dept = document.getElementById('fDept').value;
+  const rec = document.getElementById('fRec').value.trim();
+  const pur = document.getElementById('fPur').value.trim();
+  const kid = document.getElementById('fKey').value;
+  const issueSigByBlank = isSigBlank('issueSigByCanvas');
+  const issueSigRecBlank = isSigBlank('issueSigRecCanvas');
+  let hasError = false;
+  if (!by || !dept || !rec || !pur || !kid) {
+    toast('Please fill in all fields', 'error');
+    hasError = true;
+  }
+  if (issueSigByBlank) { flashMissing('wrapIssueSigBy'); toast('Please provide signature for "Issued by"', 'error'); hasError = true; }
+  if (issueSigRecBlank) { flashMissing('wrapIssueSigRec'); toast('Please provide signature for "Recipient"', 'error'); hasError = true; }
+  if (hasError) return;
+  try {
+    await apiPost('/api/records', {
+      keyId: kid, issuedBy: by, department: dept, recipient: rec, purpose: pur,
+      issueSigBy: getSigData('issueSigByCanvas'),
+      issueSigRec: getSigData('issueSigRecCanvas')
+    });
+    await loadRecords();
+    document.getElementById('fBy').value = '';
+    document.getElementById('fDept').value = '';
+    document.getElementById('fRec').value = '';
+    document.getElementById('fPur').value = '';
+    clearIssueSigs();
+    toast(kid + ' issued to ' + rec);
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+});
+
+/* ── Add Key (with Admin Auth Gate) ─────────────────────────── */
+async function executeAddKey() {
+  const keyId = document.getElementById('newKeyId').value.trim();
+  const label = document.getElementById('newKeyLabel').value.trim();
+  const location = document.getElementById('newKeyLocation').value.trim();
+  if (!keyId) {
+    toast('Key ID required', 'error');
+    return;
+  }
+  try {
+    await apiPost('/api/keys', { keyId, label, location });
+    document.getElementById('newKeyId').value = '';
+    document.getElementById('newKeyLabel').value = '';
+    document.getElementById('newKeyLocation').value = '';
+    await loadKeys();
+    await populateSel();
+    toast(keyId + ' added successfully');
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+document.getElementById('addKeyBtn').addEventListener('click', () => {
+  const keyId = document.getElementById('newKeyId').value.trim();
+  if (!keyId) {
+    toast('Key ID required', 'error');
+    return;
+  }
+  if (isAdminSessionActive()) {
+    executeAddKey();
+  } else {
+    openAdminAuthModal(() => executeAddKey(), 'add');
+  }
+});
+
+/* ── Search ──────────────────────────────────────────────────── */
+document.getElementById('searchInput').addEventListener('input', e => {
+  search = e.target.value;
+  render();
+});
+
+/* ── Filter Tabs ─────────────────────────────────────────────── */
+document.querySelectorAll('.ftab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.ftab').forEach(x => x.classList.remove('on'));
+    t.classList.add('on');
+    filter = t.dataset.f;
+    render();
+  });
+});
+
+/* ── Email Settings ──────────────────────────────────────────── */
+const SETTINGS_KEY = 'icps_email_settings';
+
+// Returns current saved settings object from localStorage
+function getSavedSettings() {
+  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch(e) { return {}; }
+}
+
+function loadSettings() {
+  try {
+    const s = getSavedSettings();
+    if (s.smtpHost)   document.getElementById('smtpHost').value = s.smtpHost;
+    if (s.smtpPort)   document.getElementById('smtpPort').value = s.smtpPort;
+    if (s.smtpUser)   document.getElementById('smtpUser').value = s.smtpUser;
+    if (s.smtpPass)   document.getElementById('smtpPass').value = s.smtpPass;
+    if (s.recipients) document.getElementById('emailRecipients').value = s.recipients;
+
+    // Update status indicator
+    updateSettingsStatus(s);
+  } catch(e) { console.error('Failed to load settings:', e); }
+}
+
+function updateSettingsStatus(s) {
+  s = s || getSavedSettings();
+  const banner = document.getElementById('settingsSavedBanner');
+  const dot = document.getElementById('settingsStatusDot');
+
+  if (s.smtpHost && s.smtpUser && s.smtpPass && s.recipients) {
+    if (banner) banner.style.display = 'flex';
+    if (dot) dot.textContent = '✓ Email configured: ' + s.smtpUser + ' → ' + s.recipients.split(',').length + ' recipient(s)';
+  } else {
+    if (banner) banner.style.display = 'none';
+    if (dot) dot.textContent = '⚠ Email not fully configured — automatic sending disabled';
+  }
+}
+
+document.getElementById('saveSettings').addEventListener('click', () => {
+  const settings = {
+    smtpHost:   document.getElementById('smtpHost').value.trim(),
+    smtpPort:   document.getElementById('smtpPort').value.trim() || '587',
+    smtpUser:   document.getElementById('smtpUser').value.trim(),
+    smtpPass:   document.getElementById('smtpPass').value,
+    recipients: document.getElementById('emailRecipients').value.trim()
+  };
+
+  if (!settings.smtpHost || !settings.smtpUser || !settings.smtpPass || !settings.recipients) {
+    toast('Please fill in all required email settings fields', 'error');
+    return;
+  }
+
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  toast('Email settings saved — will send on next export', 'success');
+  updateSettingsStatus(settings);
+});
+
+// SMTP password toggle
+document.getElementById('toggleSmtpPw') && document.getElementById('toggleSmtpPw').addEventListener('click', () => {
+  const input = document.getElementById('smtpPass');
+  const icon = document.getElementById('smtpEyeIcon');
+  if (!input || !icon) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  } else {
+    input.type = 'password';
+    icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  }
+});
+
+/* ── CSV Export + Email ──────────────────────────────────────── */
+document.getElementById('csvBtn').addEventListener('click', async () => {
+  // CRITICAL FIX: Force load settings before export to ensure password is populated
+  loadSettings();
+
+  const saved = getSavedSettings();
+
+  // Read live field values first, then fall back to saved settings
+  const smtpHost   = document.getElementById('smtpHost').value.trim()   || saved.smtpHost   || '';
+  const smtpPort   = document.getElementById('smtpPort').value.trim()   || saved.smtpPort   || '587';
+  const smtpUser   = document.getElementById('smtpUser').value.trim()   || saved.smtpUser   || '';
+  const smtpPass   = document.getElementById('smtpPass').value          || saved.smtpPass   || '';
+  const recipients = document.getElementById('emailRecipients').value.trim() || saved.recipients || '';
+
+  // Build emailConfig only if all required fields present
+  const emailConfig = (smtpHost && smtpUser && smtpPass && recipients) ? {
+    smtpHost,
+    smtpPort: parseInt(smtpPort, 10) || 587,
+    smtpUser,
+    smtpPass,
+    recipients
+  } : null;
+
+  if (!emailConfig) {
+    // Warn the user but still allow CSV download
+    toast('Email not configured — CSV will download only. Open Email & Export Settings to set up.', 'error');
+  }
+
+  // Show loading state on button
+  const btn = document.getElementById('csvBtn');
+  const origText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<svg class="icon icon-sm" style="animation:spin 0.8s linear infinite;" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56" stroke="currentColor"/></svg> Exporting…';
+
+  try {
+    const result = await apiPost('/api/export', {
+      filter: filter === 'all' ? null : filter,
+      search: search || null,
+      emailConfig,
+      month: isViewingArchive ? currentArchiveMonth : null
+    });
+
+    // Download the CSV file
+    const a = document.createElement('a');
+    a.href = API_BASE + result.downloadUrl;
+    a.download = result.filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    // Show result toast with detailed feedback
+    if (result.email && result.email.sent) {
+      toast('CSV downloaded & emailed to ' + (result.email.recipients || 0) + ' recipient(s)', 'success');
+    } else if (result.email && result.email.error) {
+      toast('CSV downloaded. Email failed: ' + result.email.error, 'error');
+      console.error('Email error details:', result.email);
+    } else if (!emailConfig) {
+      toast('CSV exported (' + (result.count || 0) + ' records). Configure email settings to enable automatic sending.', 'success');
+    } else {
+      toast('CSV exported successfully (' + (result.count || 0) + ' records)');
+    }
+  } catch (err) {
+    toast('Export failed: ' + err.message, 'error');
+    console.error('Export error:', err);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origText;
+  }
+});
+
+document.getElementById('settingsToggle').addEventListener('click', () => {
+  const panel = document.getElementById('settingsPanel');
+  const isExpanded = panel.classList.toggle('show');
+  document.getElementById('settingsToggle').setAttribute('aria-expanded', isExpanded);
+});
+
+/* ── Date Stamp ──────────────────────────────────────────────── */
+const now = new Date();
+document.getElementById('dateStamp').textContent = now.toLocaleDateString('en-GB', {
+  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+});
+
+/* ── Keyboard Shortcuts ──────────────────────────────────────── */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    document.getElementById('confirmModal').classList.remove('show');
+    document.getElementById('returnModal').classList.remove('show');
+    document.getElementById('adminAuthModal').classList.remove('show');
+    confirmCallback = null;
+    returnTargetIdx = null;
+    pendingAdminAction = null;
+  }
+  if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'SELECT' && document.activeElement.tagName !== 'TEXTAREA') {
+    e.preventDefault();
+    document.getElementById('searchInput').focus();
+  }
+});
+
+/* ── Archive Browser ─────────────────────────────────────────── */
+let isViewingArchive = false;
+let currentArchiveMonth = null;
+
+async function loadArchivesList() {
+  try {
+    const data = await apiGet('/api/archives');
+    const sel = document.getElementById('archiveMonth');
+    if (!sel) return;
+    if (data.archives && data.archives.length > 0) {
+      sel.innerHTML = data.archives.map(a =>
+        '<option value="' + escapeHtml(a.month) + '">' + escapeHtml(a.month) + ' (' + (a.recordCount || 0) + ' records)</option>'
+      ).join('');
+    } else {
+      sel.innerHTML = '<option value="">No archives available</option>';
+    }
+  } catch (err) {
+    console.error('Failed to load archives list:', err);
+  }
+}
+
+async function loadArchiveMonth(month) {
+  if (!month) return;
+  try {
+    const data = await apiGet('/api/archives/' + encodeURIComponent(month));
+    records = data.records || [];
+    isViewingArchive = true;
+    currentArchiveMonth = month;
+    document.getElementById('archiveInfo').innerHTML = 'Viewing <strong>' + escapeHtml(month) + '</strong> archive — ' + (data.recordCount || 0) + ' records (read-only)';
+    const issuePanel = document.getElementById('issuePanel');
+    if (issuePanel) issuePanel.classList.add('panel-disabled');
+    render({ isArchive: true });
+    toast('Loaded archive for ' + month);
+  } catch (err) {
+    toast('Failed to load archive', 'error');
+  }
+}
+
+async function returnToCurrent() {
+  isViewingArchive = false;
+  currentArchiveMonth = null;
+  document.getElementById('archiveInfo').textContent = '';
+  const issuePanel = document.getElementById('issuePanel');
+  if (issuePanel) issuePanel.classList.remove('panel-disabled');
+  await loadRecords();
+  toast('Returned to current month records');
+}
+
+document.getElementById('archiveToggle').addEventListener('click', () => {
+  const panel = document.getElementById('archivePanel');
+  const isVisible = panel.style.display !== 'none';
+  panel.style.display = isVisible ? 'none' : 'block';
+  if (!isVisible) loadArchivesList();
+});
+
+document.getElementById('loadArchiveBtn').addEventListener('click', () => {
+  const month = document.getElementById('archiveMonth').value;
+  if (month) loadArchiveMonth(month);
+});
+
+document.getElementById('backToCurrentBtn').addEventListener('click', returnToCurrent);
+
+/* ── Boot ────────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', async () => {
+  applyRBAC();
+  initSigPad('issueSigByCanvas', 'issueSigByClear');
+  initSigPad('issueSigRecCanvas', 'issueSigRecClear');
+  initSigPad('sigByCanvas', 'sigByClear');
+  initSigPad('sigToCanvas', 'sigToClear');
+  updateAdminBadge();
+  loadSettings();
+  await Promise.all([loadRecords(), loadKeys()]);
+});
+</script>
+</body>
+</html>

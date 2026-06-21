@@ -1,0 +1,9 @@
+{
+  "appId": "com.keyissuance.app",
+  "appName": "ICPS Key Issuance Management System",
+  "webDir": "www",
+  "server": {
+    "cleartext": true,
+    "androidScheme": "http"
+  }
+}
